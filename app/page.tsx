@@ -168,7 +168,15 @@ export default function Home() {
   ] : [];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-emerald-50">
+    <div className="min-h-screen bg-white relative overflow-hidden">
+      {/* Animated background blobs */}
+      <div className="fixed inset-0 -z-10 overflow-hidden">
+        <div className="blob blob-1" />
+        <div className="blob blob-2" />
+        <div className="blob blob-3" />
+        <div className="blob blob-4" />
+        <div className="absolute inset-0 bg-white/55" />
+      </div>
 
       {/* Header */}
       <header className="bg-white/80 backdrop-blur border-b border-gray-100 px-8 py-4 sticky top-0 z-10">
@@ -337,3 +345,4 @@ export default function Home() {
     </div>
   );
 }
+
