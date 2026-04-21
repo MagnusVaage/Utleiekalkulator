@@ -100,6 +100,8 @@ interface ComputedResult {
   title: string;
   energy: string;
   pricePerSqm: number;
+  rate: number;
+  termYears: number;
 }
 
 function compute(raw: Record<string, number | string>): ComputedResult {
@@ -113,24 +115,28 @@ function compute(raw: Record<string, number | string>): ComputedResult {
   const address = (raw.address as string) || '';
 
   const combined = (title + ' ' + address).toLowerCase();
-  let rpsq = 210;
-  if (/(oslo|frogner|grünerløkka|sagene|majorstua|st\.hanshaugen|aker brygge|tjuvholmen|grønland)/i.test(combined)) rpsq = 300;
-  else if (/(stavanger|sandnes)/i.test(combined)) rpsq = 260;
-  else if (/(bergen|fana|åsane|laksevåg)/i.test(combined)) rpsq = 250;
-  else if (/trondheim/i.test(combined)) rpsq = 235;
-  else if (/(kristiansand|tromsø|drammen|fredrikstad)/i.test(combined)) rpsq = 220;
 
-  if (rooms >= 2) rpsq += 10;
-  if (rooms >= 3) rpsq += 10;
-  if (year >= 2010) rpsq += 5;
-  if (year >= 2020) rpsq += 5;
+  // hybel.no 2026: Oslo 1-rom 14444, 2-rom 18703, 3-rom 23260
+  // Typical sizes: 1-rom 35kvm, 2-rom 55kvm, 3-rom 75kvm
+  const osloBase = rooms <= 1 ? { base: 14444, typBra: 35 }
+    : rooms === 2 ? { base: 18703, typBra: 55 }
+    : { base: 23260, typBra: 75 };
 
-  const rent = Math.round(bra * rpsq);
+  let cityMult = 0.65;
+  if (/(oslo|frogner|grünerløkka|sagene|majorstua|st\.hanshaugen|aker brygge|tjuvholmen|grønland)/i.test(combined)) cityMult = 1.0;
+  else if (/(stavanger|sandnes)/i.test(combined)) cityMult = 0.80;
+  else if (/(bergen|fana|åsane|laksevåg)/i.test(combined)) cityMult = 0.82;
+  else if (/trondheim/i.test(combined)) cityMult = 0.73;
+  else if (/(kristiansand|tromsø|drammen|fredrikstad)/i.test(combined)) cityMult = 0.68;
+
+  const baseRent = osloBase.base * cityMult * (bra / osloBase.typBra);
+  const yearBonus = year >= 2020 ? 1.06 : year >= 2010 ? 1.03 : 1.0;
+  const rent = Math.round(baseRent * yearBonus);
 
   const loan = total * 0.85;
   const equity = total * 0.15;
-  const r = 0.0525 / 12;
-  const n = 25 * 12;
+  const r = 0.048 / 12;
+  const n = 30 * 12;
   const pmt = Math.round(loan * (r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1));
 
   const fellesutgBase = ((raw.fellesutg as number) || 0) + ((raw.kommunale as number) || 0);
@@ -191,6 +197,9 @@ function compute(raw: Record<string, number | string>): ComputedResult {
     score >= 45 ? '#eab308' :
     score >= 30 ? '#f97316' : '#ef4444';
 
+  const rate = 4.8;
+  const termYears = 30;
+
   const wf = [
     { label: 'Leieinntekt', value: rent, type: 'income' },
     { label: 'Felleskost', value: -fellesutg, type: 'expense' },
@@ -225,6 +234,8 @@ function compute(raw: Record<string, number | string>): ComputedResult {
     title,
     energy: (raw.energy as string) || '',
     pricePerSqm,
+    rate,
+    termYears,
   };
 }
 
