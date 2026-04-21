@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "YieldScout — Norsk eiendomsanalyse",
+  title: "Utleiekalkulator — Norsk eiendomsanalyse",
   description: "Finn lønnsomme utleieboliger. Lim inn en Finn.no-lenke og få øyeblikkelig deal score, yield og kontantstrøm.",
 };
 
