@@ -12,9 +12,48 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const siteUrl = "https://utleiekalkulator.vercel.app";
+
 export const metadata: Metadata = {
-  title: "Utleiekalkulator — Norsk eiendomsanalyse",
-  description: "Finn lønnsomme utleieboliger. Lim inn en Finn.no-lenke og få øyeblikkelig deal score, yield og kontantstrøm.",
+  title: "Utleiekalkulator – Lønner det seg å leie ut boligen?",
+  description:
+    "Regn ut yield, kontantstrøm og rentefradrag på utleiebolig på sekunder. Lim inn en Finn.no-lenke eller fyll inn tallene selv. Gratis, ingen registrering.",
+  keywords: [
+    "utleiekalkulator",
+    "utleiebolig kalkulator",
+    "lønner det seg å leie ut",
+    "yield utleiebolig",
+    "kontantstrøm bolig",
+    "brutto yield bolig",
+    "rentefradrag utleie",
+    "finn.no kalkulator",
+    "eiendomsanalyse",
+    "utleieinvestering norge",
+  ],
+  authors: [{ name: "Utleiekalkulator" }],
+  creator: "Utleiekalkulator",
+  metadataBase: new URL(siteUrl),
+  alternates: { canonical: "/" },
+  openGraph: {
+    title: "Utleiekalkulator – Lønner det seg å leie ut boligen?",
+    description:
+      "Regn ut yield, kontantstrøm og rentefradrag på utleiebolig på sekunder. Gratis og uten registrering.",
+    url: siteUrl,
+    siteName: "Utleiekalkulator",
+    locale: "nb_NO",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Utleiekalkulator – Lønner det seg å leie ut boligen?",
+    description:
+      "Regn ut yield, kontantstrøm og rentefradrag på utleiebolig på sekunder. Gratis og uten registrering.",
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true, "max-snippet": -1 },
+  },
 };
 
 export default function RootLayout({
@@ -24,9 +63,34 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang="en"
+      lang="nb"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "WebApplication",
+              name: "Utleiekalkulator",
+              url: siteUrl,
+              description:
+                "Kalkulator for å beregne om en utleiebolig er lønnsom. Regner ut yield, kontantstrøm og rentefradrag basert på Finn.no-annonser eller egne tall.",
+              applicationCategory: "FinanceApplication",
+              operatingSystem: "Web",
+              offers: {
+                "@type": "Offer",
+                price: "0",
+                priceCurrency: "NOK",
+              },
+              inLanguage: "nb-NO",
+              keywords:
+                "utleiekalkulator, yield, kontantstrøm, utleiebolig, eiendomsanalyse",
+            }),
+          }}
+        />
+      </head>
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );

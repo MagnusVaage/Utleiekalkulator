@@ -363,6 +363,47 @@ export default function Home() {
           </p>
         </div>
       )}
+
+      {/* FAQ — SEO-innhold, alltid synlig */}
+      <section className="px-6 py-16 max-w-2xl mx-auto" aria-label="Ofte stilte spørsmål">
+        <h2 className="text-2xl font-bold text-gray-900 mb-8 text-center">Vanlige spørsmål om utleiebolig</h2>
+        <div className="flex flex-col gap-5">
+          {[
+            {
+              q: 'Hva er brutto yield på utleiebolig?',
+              a: 'Brutto yield er den årlige leieinntekten delt på kjøpesummen, oppgitt i prosent. En bolig til 3 millioner kroner med 15 000 kr i månedlig leie gir en brutto yield på 6 %. I Norge regnes 5 % eller mer som et godt utgangspunkt.',
+            },
+            {
+              q: 'Hva er rentefradrag og hvor mye sparer jeg?',
+              a: 'Når du leier ut bolig, kan du trekke fra renteutgiftene på skatten. Staten dekker 22 % av rentekostnadene dine. Har du 10 000 kr i månedlige renter, sparer du 26 400 kr i året — penger som kommer tilbake som skatteoppgjør.',
+            },
+            {
+              q: 'Lønner det seg å leie ut bolig i Norge?',
+              a: 'Det avhenger av kjøpspris, leieinntekt og finansiering. Utleie kan gi god avkastning i pressede boligmarkeder som Oslo, Bergen og Stavanger. Kalkulatoren viser deg kontantstrømmen månedlig etter skatt, slik at du ser om det faktisk lønner seg.',
+            },
+            {
+              q: 'Hva er kontantstrøm på en utleiebolig?',
+              a: 'Kontantstrøm er det du sitter igjen med hver måned etter at alle kostnader er betalt — lån, felleskostnader og skatt. Positiv kontantstrøm betyr at leien overstiger kostnadene. Negativ kontantstrøm betyr at du må legge til penger hver måned.',
+            },
+            {
+              q: 'Kan jeg bruke kalkulatoren på Finn.no-annonser?',
+              a: 'Ja! Lim inn en Finn.no-lenke øverst i kalkulatoren, trykk «Hent», og alle tall hentes automatisk — pris, størrelse, fellesgjeld og felleskostnader. Du kan deretter justere tallene manuelt om du vil.',
+            },
+          ].map(({ q, a }) => (
+            <div key={q} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+              <h3 className="font-semibold text-gray-900 mb-2 text-sm">{q}</h3>
+              <p className="text-sm text-gray-500 leading-relaxed">{a}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="border-t border-gray-100 bg-white/80 backdrop-blur px-6 py-8 text-center">
+        <p className="text-gray-400 text-xs">
+          © {new Date().getFullYear()} Utleiekalkulator · Leiepriser fra hybel.no · Rente fra Fana Sparebank · Ikke finansiell rådgivning
+        </p>
+      </footer>
     </div>
   );
 }
