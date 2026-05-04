@@ -30,9 +30,9 @@ const CITIES: Record<string, number> = {
 };
 
 function computeManual(m: ManualInput): Result | null {
-  const price = parseInt(m.prisantydning.replace(/\s/g, '')) || 0;
+  const price = parseInt(m.prisantydning.replace(/\D/g, '')) || 0;
   if (!price) return null;
-  const gjeld = parseInt(m.gjeld.replace(/\s/g, '')) || 0;
+  const gjeld = parseInt(m.gjeld.replace(/\D/g, '')) || 0;
   const total = price + gjeld;
   const bra = parseInt(m.bra) || 50;
   const rooms = parseInt(m.rooms) || 2;
@@ -40,21 +40,38 @@ function computeManual(m: ManualInput): Result | null {
   const cityMult = CITIES[m.city] ?? 0.65;
   const osloBase = rooms <= 1 ? { base: 14444, typBra: 35 } : rooms === 2 ? { base: 18703, typBra: 55 } : { base: 23260, typBra: 75 };
   const estimatedRent = Math.round(osloBase.base * cityMult * (bra / osloBase.typBra) * (year >= 2020 ? 1.06 : year >= 2010 ? 1.03 : 1.0));
-  const rent = parseInt(m.rent.replace(/\s/g, '')) || estimatedRent;
-  const fellesutgRaw = parseInt(m.fellesutg.replace(/\s/g, '')) || 0;
-  const fellesutg = fellesutgRaw || Math.round(bra * 38);
+  const rent = parseInt(m.rent.replace(/\D/g, '')) || estimatedRent;
+  const fellesutg = parseInt(m.fellesutg.replace(/\D/g, '')) || Math.round(bra * 38);
   const rate = 4.8; const termYears = 30;
   const loan = total * 0.85;
   const pmt = calcPmt(loan, rate, termYears);
   return { totalPrice: total, prisantydning: price, gjeld, bra, rooms, year, rent, fellesutg, loan: Math.round(loan), pmt, address: m.city, title: '', pricePerSqm: Math.round(total / bra), rate, termYears };
 }
 
-function Verdict({ cf, score }: { cf: number; score: number }) {
-  if (cf >= 2000) return <div className="inline-flex items-center gap-2 bg-green-50 text-green-700 border border-green-200 rounded-full px-5 py-2 text-sm font-bold">✅ Lønnsom investering</div>;
-  if (cf >= 0) return <div className="inline-flex items-center gap-2 bg-yellow-50 text-yellow-700 border border-yellow-200 rounded-full px-5 py-2 text-sm font-bold">⚠️ Nøytral — nesten i null</div>;
-  if (cf >= -3000) return <div className="inline-flex items-center gap-2 bg-orange-50 text-orange-700 border border-orange-200 rounded-full px-5 py-2 text-sm font-bold">📉 Taper litt penger</div>;
-  return <div className="inline-flex items-center gap-2 bg-red-50 text-red-700 border border-red-200 rounded-full px-5 py-2 text-sm font-bold">🚫 Ulønnsom — stor kostnad</div>;
-  score;
+function MoneyBar({ income, costs }: { income: number; costs: number }) {
+  const max = Math.max(income, costs);
+  const incPct = (income / max) * 100;
+  const costPct = (costs / max) * 100;
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="flex items-center gap-3">
+        <span className="text-xs text-gray-400 w-24 shrink-0 text-right">Leieinntekt</span>
+        <div className="flex-1 h-10 bg-gray-100 rounded-xl overflow-hidden">
+          <div className="h-full bg-blue-400 rounded-xl flex items-center px-3 transition-all duration-500" style={{ width: `${incPct}%` }}>
+            <span className="text-white text-sm font-bold whitespace-nowrap">{fmt(income)} kr</span>
+          </div>
+        </div>
+      </div>
+      <div className="flex items-center gap-3">
+        <span className="text-xs text-gray-400 w-24 shrink-0 text-right">Alle kostnader</span>
+        <div className="flex-1 h-10 bg-gray-100 rounded-xl overflow-hidden">
+          <div className="h-full bg-red-400 rounded-xl flex items-center px-3 transition-all duration-500" style={{ width: `${costPct}%` }}>
+            <span className="text-white text-sm font-bold whitespace-nowrap">{fmt(costs)} kr</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export default function Home() {
@@ -111,14 +128,18 @@ export default function Home() {
     const monthlyPmt = calcPmt(loan, result.rate, result.termYears);
     const vacancy = Math.round(rent * 0.04);
     const maintenance = Math.round(rent * 0.03);
-    const preTaxCF = Math.round(rent - result.fellesutg - vacancy - maintenance - monthlyPmt);
+    const totalCosts = result.fellesutg + vacancy + maintenance + monthlyPmt;
+    const preTaxCF = rent - totalCosts;
     const annualInterest = loan * result.rate / 100;
     const taxable = Math.max(0, (rent - result.fellesutg - maintenance - vacancy) * 12 - annualInterest);
     const monthlyTax = Math.round(taxable * 0.22 / 12);
     const afterTaxCF = preTaxCF - monthlyTax;
-    const grossYield = (rent * 12) / result.totalPrice * 100;
-    return { rent, equity, loan, monthlyPmt, preTaxCF, monthlyTax, afterTaxCF, grossYield: Math.round(grossYield * 10) / 10 };
+    const coveragePct = Math.round((rent / (totalCosts + monthlyTax)) * 100);
+    const grossYield = Math.round((rent * 12) / result.totalPrice * 1000) / 10;
+    return { rent, equity, loan, monthlyPmt, totalCosts, preTaxCF, monthlyTax, afterTaxCF, coveragePct, grossYield, vacancy, maintenance };
   }, [result, rentAdj, ekPct]);
+
+  const isPositive = adj ? adj.afterTaxCF >= 0 : false;
 
   return (
     <div className="min-h-screen bg-white relative overflow-hidden">
@@ -130,35 +151,30 @@ export default function Home() {
 
       {/* Header */}
       <header className="bg-white/80 backdrop-blur border-b border-gray-100 px-6 py-4 sticky top-0 z-10">
-        <div className="flex items-center justify-between max-w-4xl mx-auto">
+        <div className="max-w-2xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 bg-gradient-to-br from-emerald-400 to-green-600 rounded-xl flex items-center justify-center shadow-sm">
               <span className="text-white font-bold text-sm">UK</span>
             </div>
             <span className="font-bold text-gray-900 text-lg">Utleiekalkulator</span>
           </div>
-          <div className="hidden md:flex items-center gap-2 text-xs text-gray-400">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse inline-block" />
-            Gratis · Ingen registrering
-          </div>
+          <span className="hidden md:block text-xs text-gray-400">Gratis · Ingen registrering</span>
         </div>
       </header>
 
       {/* Hero */}
-      <div className="px-6 pt-14 pb-8 text-center max-w-2xl mx-auto">
+      <div className="px-6 pt-14 pb-6 text-center max-w-2xl mx-auto">
         <h1 className="text-4xl font-extrabold text-gray-900 mb-3 leading-tight">
           Vil denne boligen<br />
           <span className="bg-gradient-to-r from-emerald-500 to-green-600 bg-clip-text text-transparent">lønne seg å leie ut?</span>
         </h1>
-        <p className="text-gray-400 text-base">Fyll inn tallene — vi regner ut hva du sitter igjen med.</p>
+        <p className="text-gray-400">Fyll inn tallene — vi regner ut hva du sitter igjen med.</p>
       </div>
 
       {/* Input card */}
       <div className="px-6 pb-10 max-w-2xl mx-auto">
         <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
-
-          {/* Finn.no auto-fill */}
-          <div className="mb-6">
+          <div className="mb-5">
             <label className="text-xs text-gray-400 font-semibold uppercase tracking-wider block mb-2">Hent automatisk fra Finn.no</label>
             <div className="flex gap-2">
               <input type="url" value={url} onChange={e => setUrl(e.target.value)}
@@ -176,21 +192,18 @@ export default function Home() {
 
           <div className="border-t border-gray-100 pt-5">
             <label className="text-xs text-gray-400 font-semibold uppercase tracking-wider block mb-4">Eller fyll inn selv</label>
-
-            <div className="grid grid-cols-2 gap-3 mb-3">
+            <div className="grid grid-cols-2 gap-3 mb-4">
               {([
-                { key: 'prisantydning', label: 'Prisantydning', placeholder: '3 500 000 kr', required: true },
+                { key: 'prisantydning', label: 'Prisantydning *', placeholder: '3 500 000 kr' },
                 { key: 'gjeld', label: 'Fellesgjeld', placeholder: '0 kr' },
                 { key: 'bra', label: 'Størrelse', placeholder: '60 m²' },
                 { key: 'rooms', label: 'Antall rom', placeholder: '2' },
                 { key: 'year', label: 'Byggeår', placeholder: '2010' },
-                { key: 'fellesutg', label: 'Felleskost/mnd', placeholder: 'Estimeres automatisk' },
-                { key: 'rent', label: 'Leieinntekt/mnd', placeholder: 'Estimeres automatisk' },
-              ] as { key: keyof ManualInput; label: string; placeholder: string; required?: boolean }[]).map(f => (
+                { key: 'fellesutg', label: 'Felleskost/mnd', placeholder: 'Estimeres' },
+                { key: 'rent', label: 'Leieinntekt/mnd', placeholder: 'Estimeres' },
+              ] as { key: keyof ManualInput; label: string; placeholder: string }[]).map(f => (
                 <div key={f.key}>
-                  <label className="text-xs text-gray-500 font-medium block mb-1">
-                    {f.label}{f.required ? ' *' : ''}
-                  </label>
+                  <label className="text-xs text-gray-500 font-medium block mb-1">{f.label}</label>
                   <input type="text" value={manual[f.key]} onChange={e => setM(f.key)(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && compute()}
                     placeholder={f.placeholder}
@@ -210,9 +223,7 @@ export default function Home() {
                 </select>
               </div>
             </div>
-
             {error && <p className="text-red-500 text-sm mb-3">{error}</p>}
-
             <button onClick={compute}
               className="w-full py-4 bg-gradient-to-r from-emerald-500 to-green-600 text-white font-bold text-base rounded-xl hover:from-emerald-600 hover:to-green-700 transition-all shadow-sm">
               Beregn →
@@ -221,122 +232,130 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Results */}
+      {/* ── RESULTS ── */}
       {result && adj && (
         <div ref={resultRef} className="px-6 pb-24 max-w-2xl mx-auto flex flex-col gap-5">
 
-          {/* THE main number */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 text-center">
-            <Verdict cf={adj.afterTaxCF} score={0} />
-            <div className="mt-5 mb-1">
-              <div className="text-sm text-gray-400 mb-2">Du sitter igjen med hver måned (etter skatt)</div>
-              <div className="text-6xl font-extrabold" style={{ color: adj.afterTaxCF >= 0 ? '#16a34a' : '#ef4444' }}>
-                {adj.afterTaxCF >= 0 ? '+' : ''}{fmt(adj.afterTaxCF)} kr
-              </div>
-              <div className="text-sm text-gray-400 mt-2">{fmt(adj.afterTaxCF * 12)} kr per år</div>
+          {/* 1. VERDICT — big, emotional, clear */}
+          <div className="rounded-2xl p-8 text-center" style={{
+            background: isPositive ? 'linear-gradient(135deg,#f0fdf4,#dcfce7)' : 'linear-gradient(135deg,#fff1f2,#ffe4e6)',
+            border: `2px solid ${isPositive ? '#86efac' : '#fca5a5'}`,
+          }}>
+            <div className="text-5xl mb-4">{isPositive ? '🎉' : '📉'}</div>
+            <div className="text-lg text-gray-500 mb-2">
+              {isPositive ? 'Du tjener' : 'Dette koster deg'}
+            </div>
+            <div className="text-6xl font-black mb-3" style={{ color: isPositive ? '#16a34a' : '#dc2626' }}>
+              {isPositive ? '+' : ''}{fmt(adj.afterTaxCF)} kr
+            </div>
+            <div className="text-sm text-gray-400">per måned, etter skatt og alle kostnader</div>
+
+            <div className="mt-5 pt-5 border-t text-sm" style={{ borderColor: isPositive ? '#86efac' : '#fca5a5' }}>
+              {isPositive
+                ? `Leien dekker ${adj.coveragePct}% av kostnadene — dette er en god start 👍`
+                : `Leien dekker bare ${adj.coveragePct}% av kostnadene — du må betale resten selv`
+              }
             </div>
           </div>
 
-          {/* 4 simple stats */}
-          <div className="grid grid-cols-2 gap-4">
-            {[
-              { label: 'Estimert leieinntekt', value: `${fmt(adj.rent)} kr/mnd`, color: '#2563eb', desc: `${fmt(adj.rent / result.bra)} kr per kvm` },
-              { label: 'Lånekostnad', value: `${fmt(adj.monthlyPmt)} kr/mnd`, color: '#f97316', desc: `${fmt(adj.loan)} kr i lån` },
-              { label: 'Felleskost + avgifter', value: `${fmt(result.fellesutg)} kr/mnd`, color: '#f97316', desc: 'Løpende kostnader' },
-              { label: 'Brutto avkastning', value: `${adj.grossYield}%`, color: adj.grossYield >= 5 ? '#16a34a' : adj.grossYield >= 3.5 ? '#f59e0b' : '#ef4444', desc: 'Leie vs kjøpspris' },
-            ].map(s => (
-              <div key={s.label} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-                <div className="text-xs text-gray-400 mb-1">{s.label}</div>
-                <div className="text-2xl font-bold" style={{ color: s.color }}>{s.value}</div>
-                <div className="text-xs text-gray-400 mt-1">{s.desc}</div>
-              </div>
-            ))}
-          </div>
-
-          {/* Simple monthly breakdown */}
+          {/* 2. VISUAL — income vs costs */}
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-            <div className="text-sm font-semibold text-gray-700 mb-4">Hva skjer med leieinntekten?</div>
-            <div className="flex flex-col gap-3">
+            <h3 className="font-semibold text-gray-800 mb-5">Hva skjer med de {fmt(adj.rent)} kr i månedlig leie?</h3>
+            <MoneyBar income={adj.rent} costs={adj.totalCosts + adj.monthlyTax} />
+            <div className="mt-5 flex flex-col gap-2">
               {[
-                { label: 'Leieinntekt', value: adj.rent, pos: true },
-                { label: 'Lånekostnad', value: -adj.monthlyPmt, pos: false },
-                { label: 'Felleskost', value: -result.fellesutg, pos: false },
-                { label: 'Ledighet (4%)', value: -Math.round(adj.rent * 0.04), pos: false },
-                { label: 'Vedlikehold (3%)', value: -Math.round(adj.rent * 0.03), pos: false },
-                { label: 'Skatt (22%)', value: -adj.monthlyTax, pos: false },
+                { label: '🏦 Lånekostnad', value: adj.monthlyPmt },
+                { label: '🏢 Felleskost', value: result.fellesutg },
+                { label: '🔒 Ledighet (4%)', value: adj.vacancy },
+                { label: '🔧 Vedlikehold (3%)', value: adj.maintenance },
+                { label: '📋 Skatt (22%)', value: adj.monthlyTax },
               ].map(row => (
-                <div key={row.label} className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
-                  <span className="text-sm text-gray-600">{row.label}</span>
-                  <span className="text-sm font-semibold" style={{ color: row.pos ? '#2563eb' : '#6b7280' }}>
-                    {row.pos ? '+' : '−'}{fmt(Math.abs(row.value))} kr
-                  </span>
+                <div key={row.label} className="flex items-center justify-between text-sm py-1.5 border-b border-gray-50 last:border-0">
+                  <span className="text-gray-500">{row.label}</span>
+                  <span className="font-semibold text-gray-700">−{fmt(row.value)} kr</span>
                 </div>
               ))}
               <div className="flex items-center justify-between pt-2 mt-1">
-                <span className="text-sm font-bold text-gray-900">Du sitter igjen med</span>
-                <span className="text-lg font-extrabold" style={{ color: adj.afterTaxCF >= 0 ? '#16a34a' : '#ef4444' }}>
+                <span className="font-bold text-gray-900">Du sitter igjen med</span>
+                <span className="text-xl font-black" style={{ color: isPositive ? '#16a34a' : '#dc2626' }}>
                   {adj.afterTaxCF >= 0 ? '+' : ''}{fmt(adj.afterTaxCF)} kr
                 </span>
               </div>
             </div>
           </div>
 
-          {/* Sliders */}
+          {/* 3. WHAT IF — sliders, natural language */}
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-            <div className="text-sm font-semibold text-gray-700 mb-5">Hva om tallene er litt annerledes?</div>
+            <h3 className="font-semibold text-gray-800 mb-1">Hva om tallene er litt annerledes?</h3>
+            <p className="text-sm text-gray-400 mb-6">Dra i sliderne og se hva som skjer</p>
+
             <div className="flex flex-col gap-6">
-              {[
-                {
-                  label: 'Leieinntekt', value: rentAdj, min: 70, max: 130, step: 1,
-                  display: `${fmt(result.rent * rentAdj / 100)} kr/mnd`,
-                  onChange: setRentAdj,
-                },
-                {
-                  label: 'Egenkapital', value: ekPct, min: 10, max: 40, step: 1,
-                  display: `${ekPct}% = ${fmt(result.totalPrice * ekPct / 100)} kr`,
-                  onChange: setEkPct,
-                },
-              ].map(s => {
-                const pct = ((s.value - s.min) / (s.max - s.min)) * 100;
-                return (
-                  <div key={s.label} className="flex flex-col gap-2">
-                    <div className="flex justify-between">
-                      <span className="text-sm text-gray-500">{s.label}</span>
-                      <span className="text-sm font-bold text-gray-800">{s.display}</span>
-                    </div>
-                    <input type="range" min={s.min} max={s.max} step={s.step} value={s.value}
-                      onChange={e => s.onChange(Number(e.target.value))}
-                      className="w-full h-2 rounded-full appearance-none cursor-pointer"
-                      style={{ background: `linear-gradient(to right,#16a34a ${pct}%,#e5e7eb ${pct}%)` }}
-                    />
-                  </div>
-                );
-              })}
+              {/* Rent slider */}
+              <div>
+                <div className="flex justify-between items-baseline mb-3">
+                  <span className="text-sm text-gray-600">Leieinntekt</span>
+                  <span className="text-lg font-bold text-blue-600">{fmt(result.rent * rentAdj / 100)} kr/mnd</span>
+                </div>
+                <input type="range" min={70} max={130} step={1} value={rentAdj}
+                  onChange={e => setRentAdj(Number(e.target.value))}
+                  className="w-full h-3 rounded-full appearance-none cursor-pointer"
+                  style={{ background: `linear-gradient(to right,#3b82f6 ${((rentAdj - 70) / 60) * 100}%,#e5e7eb ${((rentAdj - 70) / 60) * 100}%)` }}
+                />
+                <div className="flex justify-between text-xs text-gray-300 mt-1">
+                  <span>Lav</span><span>Høy</span>
+                </div>
+              </div>
+
+              {/* EK slider */}
+              <div>
+                <div className="flex justify-between items-baseline mb-3">
+                  <span className="text-sm text-gray-600">Egenkapital du legger inn</span>
+                  <span className="text-lg font-bold text-purple-600">{fmt(result.totalPrice * ekPct / 100)} kr ({ekPct}%)</span>
+                </div>
+                <input type="range" min={10} max={40} step={1} value={ekPct}
+                  onChange={e => setEkPct(Number(e.target.value))}
+                  className="w-full h-3 rounded-full appearance-none cursor-pointer"
+                  style={{ background: `linear-gradient(to right,#9333ea ${((ekPct - 10) / 30) * 100}%,#e5e7eb ${((ekPct - 10) / 30) * 100}%)` }}
+                />
+                <div className="flex justify-between text-xs text-gray-300 mt-1">
+                  <span>Minimum (10%)</span><span>Mye (40%)</span>
+                </div>
+              </div>
+
+              {/* Live result after sliders */}
+              <div className="rounded-xl p-4 text-center" style={{
+                background: isPositive ? '#f0fdf4' : '#fff1f2',
+                border: `1.5px solid ${isPositive ? '#86efac' : '#fca5a5'}`,
+              }}>
+                <div className="text-xs text-gray-400 mb-1">Med disse tallene sitter du igjen med</div>
+                <div className="text-3xl font-black" style={{ color: isPositive ? '#16a34a' : '#dc2626' }}>
+                  {adj.afterTaxCF >= 0 ? '+' : ''}{fmt(adj.afterTaxCF)} kr/mnd
+                </div>
+              </div>
             </div>
           </div>
 
-          {/* Property details (collapsed) */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-            <div className="text-xs text-gray-400 font-semibold uppercase tracking-wider mb-3">Forutsetninger</div>
-            <div className="grid grid-cols-2 gap-3 text-sm">
-              {[
-                ['Totalpris', `${fmt(result.totalPrice)} kr`],
-                ['Egenkapital', `${fmt(adj.equity)} kr (${ekPct}%)`],
-                ['Lån', `${fmt(adj.loan)} kr`],
-                ['Rente', `${result.rate}% (Fana Sparebank)`],
-                ['Løpetid', `${result.termYears} år`],
-                ['Terminbeløp', `${fmt(adj.monthlyPmt)} kr/mnd`],
-              ].map(([k, v]) => (
-                <div key={k}>
-                  <div className="text-gray-400 text-xs">{k}</div>
-                  <div className="font-semibold text-gray-700">{v}</div>
-                </div>
-              ))}
+          {/* 4. KEY FACTS — 3 friendly sentences */}
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+            <h3 className="font-semibold text-gray-800 mb-4">Kort oppsummert</h3>
+            <div className="flex flex-col gap-4">
+              <div className="flex gap-3">
+                <span className="text-xl shrink-0">🏠</span>
+                <p className="text-sm text-gray-600">Totalpris er <strong className="text-gray-900">{fmt(result.totalPrice)} kr</strong>. Du trenger <strong className="text-gray-900">{fmt(adj.equity)} kr</strong> på konto — banken låner deg resten.</p>
+              </div>
+              <div className="flex gap-3">
+                <span className="text-xl shrink-0">📅</span>
+                <p className="text-sm text-gray-600">Lånet på <strong className="text-gray-900">{fmt(adj.loan)} kr</strong> koster deg <strong className="text-gray-900">{fmt(adj.monthlyPmt)} kr per måned</strong> i 30 år med 4,8% rente.</p>
+              </div>
+              <div className="flex gap-3">
+                <span className="text-xl shrink-0">📈</span>
+                <p className="text-sm text-gray-600">Brutto avkastning er <strong className="text-gray-900">{adj.grossYield}%</strong> — {adj.grossYield >= 5 ? 'over' : 'under'} det som regnes som lønnsomt i Norge ({adj.grossYield >= 5 ? '✅' : 'typisk trenger du 5%+ ⚠️'}).</p>
+              </div>
             </div>
           </div>
 
           <p className="text-center text-gray-300 text-xs">
-            Leiepriser fra hybel.no · Rente fra Finansportalen · Ikke finansiell rådgivning
+            Leiepriser fra hybel.no · Rente fra Finansportalen (Fana Sparebank) · Ikke finansiell rådgivning
           </p>
         </div>
       )}
