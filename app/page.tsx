@@ -119,6 +119,71 @@ function Slider({ label, value, min, max, step, display, onChange }: {
   );
 }
 
+interface ManualInput {
+  prisantydning: string; gjeld: string; bra: string; rooms: string;
+  year: string; fellesutg: string; rent: string; city: string;
+}
+
+const CITIES: Record<string, number> = {
+  oslo: 1.0, bergen: 0.82, stavanger: 0.80, trondheim: 0.73, annet: 0.65,
+};
+
+function computeManual(m: ManualInput): Result | null {
+  const price = parseInt(m.prisantydning.replace(/\s/g, '')) || 0;
+  if (!price) return null;
+  const gjeld = parseInt(m.gjeld.replace(/\s/g, '')) || 0;
+  const total = price + gjeld;
+  const bra = parseInt(m.bra) || 50;
+  const rooms = parseInt(m.rooms) || 2;
+  const year = parseInt(m.year) || 2000;
+  const fellesutg = parseInt(m.fellesutg.replace(/\s/g, '')) || Math.round(bra * 38);
+
+  const cityMult = CITIES[m.city] ?? 0.65;
+  const osloBase = rooms <= 1 ? { base: 14444, typBra: 35 } : rooms === 2 ? { base: 18703, typBra: 55 } : { base: 23260, typBra: 75 };
+  const estimatedRent = Math.round(osloBase.base * cityMult * (bra / osloBase.typBra) * (year >= 2020 ? 1.06 : year >= 2010 ? 1.03 : 1.0));
+  const rent = parseInt(m.rent.replace(/\s/g, '')) || estimatedRent;
+
+  const rate = 4.8; const termYears = 30;
+  const loan = total * 0.85; const equity = total * 0.15;
+  const r = rate / 100 / 12; const n = termYears * 12;
+  const pmt = Math.round(loan * (r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1));
+  const vacancy = Math.round(rent * 0.04); const maintenance = Math.round(rent * 0.03);
+  const monthlyCF = Math.round(rent - fellesutg - vacancy - maintenance - pmt);
+  const grossYield = (rent * 12) / total * 100;
+  const netYield = ((rent - fellesutg - vacancy - maintenance) * 12) / total * 100;
+  const roeCash = equity > 0 ? (monthlyCF * 12) / equity * 100 : 0;
+  const paybackYears = monthlyCF > 0 ? equity / (monthlyCF * 12) : 99;
+  const pricePerSqm = bra > 0 ? Math.round(total / bra) : 0;
+
+  let score = 0;
+  score += grossYield >= 8 ? 30 : grossYield >= 6 ? 22 : grossYield >= 5 ? 15 : grossYield >= 4 ? 8 : 3;
+  score += monthlyCF >= 3000 ? 20 : monthlyCF >= 1000 ? 15 : monthlyCF >= 0 ? 8 : 2;
+  score += pricePerSqm < 50000 ? 20 : pricePerSqm < 75000 ? 14 : pricePerSqm < 100000 ? 8 : 3;
+  score += year >= 2015 ? 10 : year >= 2000 ? 7 : year >= 1990 ? 5 : 2;
+  score += (gjeld / total) < 0.1 ? 10 : (gjeld / total) < 0.2 ? 7 : (gjeld / total) < 0.35 ? 4 : 1;
+  score += rooms >= 3 ? 10 : rooms >= 2 ? 7 : 3;
+  score = Math.min(100, Math.max(0, score));
+
+  const label = score >= 75 ? 'STERK DEAL' : score >= 60 ? 'SOLID' : score >= 45 ? 'NØYTRAL' : score >= 30 ? 'SVAK' : 'UNNGÅ';
+  const labelColor = score >= 75 ? '#22c55e' : score >= 60 ? '#84cc16' : score >= 45 ? '#eab308' : score >= 30 ? '#f97316' : '#ef4444';
+  const wf: WfItem[] = [
+    { label: 'Leieinntekt', value: rent, type: 'income' },
+    { label: 'Felleskost', value: -fellesutg, type: 'expense' },
+    { label: 'Ledighet', value: -vacancy, type: 'expense' },
+    { label: 'Vedlikehold', value: -maintenance, type: 'expense' },
+    { label: 'Lånekostnad', value: -pmt, type: 'expense' },
+    { label: 'Netto CF', value: monthlyCF, type: monthlyCF >= 0 ? 'net-pos' : 'net-neg' },
+  ];
+  return {
+    score, label, labelColor, totalPrice: total, prisantydning: price, gjeld, bra, rooms, year,
+    rent, fellesutg, monthlyCF, grossYield: Math.round(grossYield * 10) / 10,
+    netYield: Math.round(netYield * 10) / 10, equity: Math.round(equity), roeCash: Math.round(roeCash * 10) / 10,
+    paybackYears: Math.round(paybackYears * 10) / 10, loan: Math.round(loan), pmt, wf,
+    address: m.city.charAt(0).toUpperCase() + m.city.slice(1), title: 'Manuell analyse',
+    energy: '', pricePerSqm, rate, termYears,
+  };
+}
+
 const FEATURES = [
   { icon: '⚡', title: 'Øyeblikkelig analyse', desc: 'Lim inn Finn.no-lenken — alt beregnes automatisk på sekunder' },
   { icon: '🏦', title: 'Skatt inkludert', desc: '22% skatt på utleieinntekt beregnes automatisk — se hva du faktisk sitter igjen med' },
@@ -127,6 +192,7 @@ const FEATURES = [
 ];
 
 export default function Home() {
+  const [mode, setMode] = useState<'url' | 'manual'>('url');
   const [url, setUrl] = useState('');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<Result | null>(null);
@@ -134,6 +200,11 @@ export default function Home() {
   const [rentAdj, setRentAdj] = useState(100);
   const [ekPct, setEkPct] = useState(15);
   const resultRef = useRef<HTMLDivElement>(null);
+  const [manual, setManual] = useState<ManualInput>({
+    prisantydning: '', gjeld: '', bra: '', rooms: '2', year: '',
+    fellesutg: '', rent: '', city: 'oslo',
+  });
+  const setM = (k: keyof ManualInput) => (v: string) => setManual(p => ({ ...p, [k]: v }));
 
   const analyze = async () => {
     if (!url.trim()) return;
@@ -145,6 +216,14 @@ export default function Home() {
       else { setResult(data); setTimeout(() => resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 150); }
     } catch { setError('Nettverksfeil. Prøv igjen.'); }
     finally { setLoading(false); }
+  };
+
+  const analyzeManual = () => {
+    setError(''); setResult(null); setRentAdj(100); setEkPct(15);
+    const r = computeManual(manual);
+    if (!r) { setError('Fyll inn minst prisantydning.'); return; }
+    setResult(r);
+    setTimeout(() => resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 150);
   };
 
   const adj = useMemo(() => {
@@ -244,20 +323,73 @@ export default function Home() {
           Lim inn en Finn.no-lenke og få øyeblikkelig analyse av yield, skatt, kontantstrøm og 10-år prognose.
         </p>
 
-        {/* Search */}
-        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-3 flex flex-col sm:flex-row gap-3 max-w-3xl mx-auto">
-          <input
-            type="url" value={url}
-            onChange={e => setUrl(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && analyze()}
-            placeholder="https://www.finn.no/realestate/homes/ad.html?finnkode=..."
-            className="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-5 py-3.5 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-300 focus:border-transparent"
-          />
-          <button onClick={analyze} disabled={loading || !url.trim()}
-            className="px-8 py-3.5 bg-gradient-to-r from-emerald-500 to-green-600 text-white font-bold text-sm rounded-xl hover:from-emerald-600 hover:to-green-700 disabled:opacity-40 transition-all shadow-sm whitespace-nowrap">
-            {loading ? 'Analyserer...' : 'Analyser gratis →'}
-          </button>
+        {/* Tab toggle */}
+        <div className="inline-flex bg-gray-100 rounded-xl p-1 mb-5">
+          {(['url', 'manual'] as const).map(m => (
+            <button key={m} onClick={() => { setMode(m); setResult(null); setError(''); }}
+              className={`px-6 py-2 rounded-lg text-sm font-semibold transition-all ${mode === m ? 'bg-white shadow-sm text-gray-900' : 'text-gray-400 hover:text-gray-600'}`}>
+              {m === 'url' ? '🔗 Finn.no-lenke' : '✏️ Manuelt'}
+            </button>
+          ))}
         </div>
+
+        {/* URL input */}
+        {mode === 'url' && (
+          <div className="max-w-3xl mx-auto">
+            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-3 flex flex-col sm:flex-row gap-3">
+              <input type="url" value={url} onChange={e => setUrl(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && analyze()}
+                placeholder="https://www.finn.no/realestate/homes/ad.html?finnkode=..."
+                className="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-5 py-3.5 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-300 focus:border-transparent"
+              />
+              <button onClick={analyze} disabled={loading || !url.trim()}
+                className="px-8 py-3.5 bg-gradient-to-r from-emerald-500 to-green-600 text-white font-bold text-sm rounded-xl hover:from-emerald-600 hover:to-green-700 disabled:opacity-40 transition-all shadow-sm whitespace-nowrap">
+                {loading ? 'Analyserer...' : 'Analyser gratis →'}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Manual input */}
+        {mode === 'manual' && (
+          <div className="max-w-3xl mx-auto bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-4">
+              {([
+                { key: 'prisantydning', label: 'Prisantydning (kr) *', placeholder: '3 500 000' },
+                { key: 'gjeld', label: 'Fellesgjeld (kr)', placeholder: '0' },
+                { key: 'bra', label: 'Bruksareal (m²)', placeholder: '60' },
+                { key: 'rooms', label: 'Antall rom', placeholder: '2' },
+                { key: 'year', label: 'Byggeår', placeholder: '2010' },
+                { key: 'fellesutg', label: 'Felleskost/mnd (kr)', placeholder: 'Estimeres' },
+                { key: 'rent', label: 'Leieinntekt/mnd (kr)', placeholder: 'Estimeres fra hybel.no' },
+              ] as { key: keyof ManualInput; label: string; placeholder: string }[]).map(f => (
+                <div key={f.key} className={f.key === 'rent' ? 'col-span-2 sm:col-span-1' : ''}>
+                  <label className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold block mb-1">{f.label}</label>
+                  <input type="text" value={manual[f.key]} onChange={e => setM(f.key)(e.target.value)}
+                    placeholder={f.placeholder}
+                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-800 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-emerald-300 focus:border-transparent"
+                  />
+                </div>
+              ))}
+              <div>
+                <label className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold block mb-1">By</label>
+                <select value={manual.city} onChange={e => setM('city')(e.target.value)}
+                  className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-emerald-300">
+                  <option value="oslo">Oslo</option>
+                  <option value="bergen">Bergen</option>
+                  <option value="stavanger">Stavanger</option>
+                  <option value="trondheim">Trondheim</option>
+                  <option value="annet">Annet</option>
+                </select>
+              </div>
+            </div>
+            <button onClick={analyzeManual}
+              className="w-full py-3.5 bg-gradient-to-r from-emerald-500 to-green-600 text-white font-bold text-sm rounded-xl hover:from-emerald-600 hover:to-green-700 transition-all shadow-sm">
+              Analyser gratis →
+            </button>
+          </div>
+        )}
+
         {error && <div className="max-w-3xl mx-auto mt-3 text-red-600 text-sm bg-red-50 border border-red-100 rounded-xl px-4 py-3">{error}</div>}
       </div>
 
