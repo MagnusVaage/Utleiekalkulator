@@ -192,11 +192,12 @@ const FEATURES = [
 ];
 
 export default function Home() {
-  const [mode, setMode] = useState<'url' | 'manual'>('url');
   const [url, setUrl] = useState('');
+  const [fetching, setFetching] = useState(false);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<Result | null>(null);
   const [error, setError] = useState('');
+  const [fetchMsg, setFetchMsg] = useState('');
   const [rentAdj, setRentAdj] = useState(100);
   const [ekPct, setEkPct] = useState(15);
   const resultRef = useRef<HTMLDivElement>(null);
@@ -206,16 +207,29 @@ export default function Home() {
   });
   const setM = (k: keyof ManualInput) => (v: string) => setManual(p => ({ ...p, [k]: v }));
 
-  const analyze = async () => {
+  const fetchFromFinn = async () => {
     if (!url.trim()) return;
-    setLoading(true); setError(''); setResult(null); setRentAdj(100); setEkPct(15);
+    setFetching(true); setFetchMsg(''); setError('');
     try {
       const res = await fetch(`/api/analyze?url=${encodeURIComponent(url.trim())}`);
       const data = await res.json();
-      if (data.error) setError(data.error);
-      else { setResult(data); setTimeout(() => resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 150); }
+      if (data.error) { setError(data.error); return; }
+      setManual({
+        prisantydning: String(data.prisantydning || ''),
+        gjeld: String(data.gjeld || ''),
+        bra: String(data.bra || ''),
+        rooms: String(data.rooms || '2'),
+        year: String(data.year || ''),
+        fellesutg: String(data.fellesutg || ''),
+        rent: String(data.rent || ''),
+        city: (data.address || '').toLowerCase().includes('oslo') ? 'oslo'
+          : (data.address || '').toLowerCase().includes('bergen') ? 'bergen'
+          : (data.address || '').toLowerCase().includes('stavanger') ? 'stavanger'
+          : (data.address || '').toLowerCase().includes('trondheim') ? 'trondheim' : 'annet',
+      });
+      setFetchMsg('✓ Hentet fra Finn.no — juster gjerne og trykk Analyser');
     } catch { setError('Nettverksfeil. Prøv igjen.'); }
-    finally { setLoading(false); }
+    finally { setFetching(false); }
   };
 
   const analyzeManual = () => {
@@ -323,58 +337,50 @@ export default function Home() {
           Lim inn en Finn.no-lenke og få øyeblikkelig analyse av yield, skatt, kontantstrøm og 10-år prognose.
         </p>
 
-        {/* Tab toggle */}
-        <div className="inline-flex bg-gray-100 rounded-xl p-1 mb-5">
-          {(['url', 'manual'] as const).map(m => (
-            <button key={m} onClick={() => { setMode(m); setResult(null); setError(''); }}
-              className={`px-6 py-2 rounded-lg text-sm font-semibold transition-all ${mode === m ? 'bg-white shadow-sm text-gray-900' : 'text-gray-400 hover:text-gray-600'}`}>
-              {m === 'url' ? '🔗 Finn.no-lenke' : '✏️ Manuelt'}
-            </button>
-          ))}
-        </div>
+        {/* Main input card */}
+        <div className="max-w-3xl mx-auto bg-white rounded-2xl shadow-lg border border-gray-100 p-6 text-left">
 
-        {/* URL input */}
-        {mode === 'url' && (
-          <div className="max-w-3xl mx-auto">
-            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-3 flex flex-col sm:flex-row gap-3">
+          {/* Finn.no auto-fill */}
+          <div className="mb-5">
+            <label className="text-xs text-gray-400 uppercase tracking-wider font-semibold block mb-2">Hent automatisk fra Finn.no (valgfritt)</label>
+            <div className="flex gap-2">
               <input type="url" value={url} onChange={e => setUrl(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && analyze()}
+                onKeyDown={e => e.key === 'Enter' && fetchFromFinn()}
                 placeholder="https://www.finn.no/realestate/homes/ad.html?finnkode=..."
-                className="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-5 py-3.5 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-300 focus:border-transparent"
+                className="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-300 focus:border-transparent"
               />
-              <button onClick={analyze} disabled={loading || !url.trim()}
-                className="px-8 py-3.5 bg-gradient-to-r from-emerald-500 to-green-600 text-white font-bold text-sm rounded-xl hover:from-emerald-600 hover:to-green-700 disabled:opacity-40 transition-all shadow-sm whitespace-nowrap">
-                {loading ? 'Analyserer...' : 'Analyser gratis →'}
+              <button onClick={fetchFromFinn} disabled={fetching || !url.trim()}
+                className="px-5 py-2.5 bg-gray-900 text-white text-sm font-semibold rounded-xl hover:bg-gray-700 disabled:opacity-40 transition-all whitespace-nowrap">
+                {fetching ? 'Henter...' : 'Hent data'}
               </button>
             </div>
+            {fetchMsg && <div className="mt-2 text-emerald-600 text-xs font-medium">{fetchMsg}</div>}
           </div>
-        )}
 
-        {/* Manual input */}
-        {mode === 'manual' && (
-          <div className="max-w-3xl mx-auto bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-4">
+          <div className="border-t border-gray-100 pt-5">
+            <label className="text-xs text-gray-400 uppercase tracking-wider font-semibold block mb-3">Boligdetaljer</label>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
               {([
                 { key: 'prisantydning', label: 'Prisantydning (kr) *', placeholder: '3 500 000' },
                 { key: 'gjeld', label: 'Fellesgjeld (kr)', placeholder: '0' },
-                { key: 'bra', label: 'Bruksareal (m²)', placeholder: '60' },
+                { key: 'bra', label: 'Areal (m²)', placeholder: '60' },
                 { key: 'rooms', label: 'Antall rom', placeholder: '2' },
                 { key: 'year', label: 'Byggeår', placeholder: '2010' },
-                { key: 'fellesutg', label: 'Felleskost/mnd (kr)', placeholder: 'Estimeres' },
-                { key: 'rent', label: 'Leieinntekt/mnd (kr)', placeholder: 'Estimeres fra hybel.no' },
+                { key: 'fellesutg', label: 'Felleskost/mnd', placeholder: 'Estimeres' },
+                { key: 'rent', label: 'Leieinntekt/mnd', placeholder: 'Estimeres' },
               ] as { key: keyof ManualInput; label: string; placeholder: string }[]).map(f => (
-                <div key={f.key} className={f.key === 'rent' ? 'col-span-2 sm:col-span-1' : ''}>
-                  <label className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold block mb-1">{f.label}</label>
+                <div key={f.key}>
+                  <label className="text-[10px] text-gray-400 uppercase tracking-wider block mb-1">{f.label}</label>
                   <input type="text" value={manual[f.key]} onChange={e => setM(f.key)(e.target.value)}
                     placeholder={f.placeholder}
-                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-800 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-emerald-300 focus:border-transparent"
+                    className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-800 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-emerald-300 focus:border-transparent"
                   />
                 </div>
               ))}
               <div>
-                <label className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold block mb-1">By</label>
+                <label className="text-[10px] text-gray-400 uppercase tracking-wider block mb-1">By</label>
                 <select value={manual.city} onChange={e => setM('city')(e.target.value)}
-                  className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-emerald-300">
+                  className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-emerald-300">
                   <option value="oslo">Oslo</option>
                   <option value="bergen">Bergen</option>
                   <option value="stavanger">Stavanger</option>
@@ -388,7 +394,7 @@ export default function Home() {
               Analyser gratis →
             </button>
           </div>
-        )}
+        </div>
 
         {error && <div className="max-w-3xl mx-auto mt-3 text-red-600 text-sm bg-red-50 border border-red-100 rounded-xl px-4 py-3">{error}</div>}
       </div>
