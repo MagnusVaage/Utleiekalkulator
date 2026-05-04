@@ -128,16 +128,16 @@ export default function Home() {
     const monthlyPmt = calcPmt(loan, result.rate, result.termYears);
     const monthlyInterest = Math.round(loan * result.rate / 100 / 12);
     const monthlyPrincipal = monthlyPmt - monthlyInterest;
-    const maintenance = Math.round(rent * 0.03);
-    const totalCosts = result.fellesutg + maintenance + monthlyPmt;
+    const totalCosts = result.fellesutg + monthlyPmt;
     const preTaxCF = rent - totalCosts;
-    const annualInterest = loan * result.rate / 100;
-    const taxable = Math.max(0, (rent - result.fellesutg - maintenance) * 12 - annualInterest);
-    const monthlyTax = Math.round(taxable * 0.22 / 12);
+    // Tax: 22% on (rent - fellesutg - interest). Rentefradrag reduces tax.
+    const taxable = Math.max(0, rent - result.fellesutg - monthlyInterest);
+    const monthlyTax = Math.round(taxable * 0.22);
+    const rentefradragAnnual = Math.round(monthlyInterest * 12 * 0.22);
     const afterTaxCF = preTaxCF - monthlyTax;
     const coveragePct = Math.round((rent / (totalCosts + monthlyTax)) * 100);
     const grossYield = Math.round((rent * 12) / result.totalPrice * 1000) / 10;
-    return { rent, equity, loan, monthlyPmt, monthlyInterest, monthlyPrincipal, totalCosts, preTaxCF, monthlyTax, afterTaxCF, coveragePct, grossYield, maintenance };
+    return { rent, equity, loan, monthlyPmt, monthlyInterest, monthlyPrincipal, totalCosts, preTaxCF, monthlyTax, afterTaxCF, coveragePct, grossYield, rentefradragAnnual };
   }, [result, rentAdj, ekPct]);
 
   const isPositive = adj ? adj.afterTaxCF >= 0 : false;
@@ -268,14 +268,17 @@ export default function Home() {
                 { label: '💸 Renter', value: adj.monthlyInterest },
                 { label: '🏦 Avdrag (nedbetaling)', value: adj.monthlyPrincipal },
                 { label: '🏢 Felleskost', value: result.fellesutg },
-                { label: '🔧 Vedlikehold (3%)', value: adj.maintenance },
                 { label: '📋 Skatt (22%)', value: adj.monthlyTax },
               ].map(row => (
-                <div key={row.label} className="flex items-center justify-between text-sm py-1.5 border-b border-gray-50 last:border-0">
+                <div key={row.label} className="flex items-center justify-between text-sm py-1.5 border-b border-gray-50">
                   <span className="text-gray-500">{row.label}</span>
                   <span className="font-semibold text-gray-700">−{fmt(row.value)} kr</span>
                 </div>
               ))}
+              <div className="flex items-center justify-between text-sm py-1.5 border-b border-gray-50">
+                <span className="text-emerald-600 font-medium">🇳🇴 Rentefradrag (22% av renter)</span>
+                <span className="font-semibold text-emerald-600">+{fmt(adj.rentefradragAnnual)} kr spart i året</span>
+              </div>
               <div className="flex items-center justify-between pt-2 mt-1">
                 <span className="font-bold text-gray-900">Du sitter igjen med</span>
                 <span className="text-xl font-black" style={{ color: isPositive ? '#16a34a' : '#dc2626' }}>
