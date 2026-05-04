@@ -126,17 +126,18 @@ export default function Home() {
     const equity = result.totalPrice * ekPct / 100;
     const loan = result.totalPrice - equity;
     const monthlyPmt = calcPmt(loan, result.rate, result.termYears);
-    const vacancy = Math.round(rent * 0.04);
+    const monthlyInterest = Math.round(loan * result.rate / 100 / 12);
+    const monthlyPrincipal = monthlyPmt - monthlyInterest;
     const maintenance = Math.round(rent * 0.03);
-    const totalCosts = result.fellesutg + vacancy + maintenance + monthlyPmt;
+    const totalCosts = result.fellesutg + maintenance + monthlyPmt;
     const preTaxCF = rent - totalCosts;
     const annualInterest = loan * result.rate / 100;
-    const taxable = Math.max(0, (rent - result.fellesutg - maintenance - vacancy) * 12 - annualInterest);
+    const taxable = Math.max(0, (rent - result.fellesutg - maintenance) * 12 - annualInterest);
     const monthlyTax = Math.round(taxable * 0.22 / 12);
     const afterTaxCF = preTaxCF - monthlyTax;
     const coveragePct = Math.round((rent / (totalCosts + monthlyTax)) * 100);
     const grossYield = Math.round((rent * 12) / result.totalPrice * 1000) / 10;
-    return { rent, equity, loan, monthlyPmt, totalCosts, preTaxCF, monthlyTax, afterTaxCF, coveragePct, grossYield, vacancy, maintenance };
+    return { rent, equity, loan, monthlyPmt, monthlyInterest, monthlyPrincipal, totalCosts, preTaxCF, monthlyTax, afterTaxCF, coveragePct, grossYield, maintenance };
   }, [result, rentAdj, ekPct]);
 
   const isPositive = adj ? adj.afterTaxCF >= 0 : false;
@@ -264,9 +265,9 @@ export default function Home() {
             <MoneyBar income={adj.rent} costs={adj.totalCosts + adj.monthlyTax} />
             <div className="mt-5 flex flex-col gap-2">
               {[
-                { label: '🏦 Lånekostnad', value: adj.monthlyPmt },
+                { label: '💸 Renter', value: adj.monthlyInterest },
+                { label: '🏦 Avdrag (nedbetaling)', value: adj.monthlyPrincipal },
                 { label: '🏢 Felleskost', value: result.fellesutg },
-                { label: '🔒 Ledighet (4%)', value: adj.vacancy },
                 { label: '🔧 Vedlikehold (3%)', value: adj.maintenance },
                 { label: '📋 Skatt (22%)', value: adj.monthlyTax },
               ].map(row => (
