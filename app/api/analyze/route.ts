@@ -48,8 +48,10 @@ function parseFinnHtml(html: string) {
   tryNum(/Prisantydning[\s\S]{0,200}?([\d\s]{5,12})\s*kr/i, 'price');
   tryNum(/Totalpris[\s\S]{0,200}?([\d\s]{5,12})\s*kr/i, 'total');
   tryNum(/Fellesgjeld[\s\S]{0,200}?([\d\s]{3,10})\s*kr/i, 'gjeld');
-  tryNum(/Felleskost\/mnd\.[\s\S]{0,200}?([\d\s]{2,8})\s*kr/i, 'fellesutg');
-  tryNum(/Kommunale avg[\s\S]{0,200}?([\d\s]{2,8})\s*kr/i, 'kommunale');
+  // Try multiple patterns — Finn.no format varies
+  tryNum(/Felleskost[^<\n]{0,30}?(?:\/\s*mnd|pr\.?\s*mnd)[.\s\S]{0,200}?([\d\s\u00a0]{2,8})\s*kr/i, 'fellesutg');
+  tryNum(/Felleskost\/mnd\.?[\s\S]{0,200}?([\d\s\u00a0]{2,8})\s*kr/i, 'fellesutg');
+  tryNum(/Kommunale avg[\s\S]{0,200}?([\d\s\u00a0]{2,8})\s*kr/i, 'kommunale');
   tryNum(/Primærrom[\s\S]{0,100}?(\d{1,4})\s*m²/i, 'bra');
   tryNum(/Bruksareal[\s\S]{0,100}?(\d{1,4})\s*m²/i, 'bra2');
   tryNum(/(\d{1,2})\s*soverom/i, 'rooms');
@@ -87,6 +89,8 @@ interface ComputedResult {
   year: number;
   rent: number;
   fellesutg: number;
+  fellesutgRaw: number;
+  kommunaleRaw: number;
   monthlyCF: number;
   grossYield: number;
   netYield: number;
@@ -139,7 +143,11 @@ function compute(raw: Record<string, number | string>): ComputedResult {
   const n = 30 * 12;
   const pmt = Math.round(loan * (r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1));
 
-  const fellesutgBase = ((raw.fellesutg as number) || 0) + ((raw.kommunale as number) || 0);
+  const fellesutgRaw = (raw.fellesutg as number) || 0;
+  // kommunale from Finn.no is an annual figure — divide by 12 before combining
+  const kommunaleRaw = (raw.kommunale as number) || 0;
+  const kommunale_mnd = Math.round(kommunaleRaw / 12);
+  const fellesutgBase = fellesutgRaw + kommunale_mnd;
   const fellesutg = fellesutgBase || Math.round(bra * 38);
   const vacancy = Math.round(rent * 0.04);
   const maintenance = Math.round(rent * 0.03);
@@ -236,6 +244,8 @@ function compute(raw: Record<string, number | string>): ComputedResult {
     pricePerSqm,
     rate,
     termYears,
+    fellesutgRaw,
+    kommunaleRaw,
   };
 }
 

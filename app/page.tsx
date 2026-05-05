@@ -146,7 +146,9 @@ export default function Home() {
         gjeld: String(data.gjeld || ''),
         bra: String(data.bra || ''),
         rooms: String(data.rooms || '2'),
-        fellesutg: String(data.fellesutg || ''),
+        // Use raw values: fellesutg is monthly, kommunale is annual
+        fellesutg: String(data.fellesutgRaw || ''),
+        kommunale: String(data.kommunaleRaw || ''),
         rent: String(data.rent || ''),
         city: addr.includes('oslo') ? 'oslo' : addr.includes('bergen') ? 'bergen'
           : addr.includes('stavanger') ? 'stavanger' : addr.includes('trondheim') ? 'trondheim' : 'annet',
