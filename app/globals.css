@@ -69,16 +69,16 @@ input[type='range']::-webkit-slider-thumb {
   -webkit-appearance: none;
   width: 18px; height: 18px;
   border-radius: 50%;
-  background: #16a34a;
+  background: #3b82f6;
   cursor: pointer;
-  box-shadow: 0 0 0 3px #fff, 0 0 0 5px #16a34a40;
+  box-shadow: 0 0 0 3px #0d1b2e, 0 0 0 5px #3b82f640;
 }
 
 input[type='range']::-moz-range-thumb {
   width: 18px; height: 18px;
   border-radius: 50%;
-  background: #16a34a;
+  background: #3b82f6;
   cursor: pointer;
   border: none;
-  box-shadow: 0 0 0 3px #fff, 0 0 0 5px #16a34a40;
+  box-shadow: 0 0 0 3px #0d1b2e, 0 0 0 5px #3b82f640;
 }
