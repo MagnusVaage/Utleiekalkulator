@@ -2,6 +2,10 @@ import Anthropic from '@anthropic-ai/sdk';
 
 export const maxDuration = 60;
 
+export const config = {
+  api: { bodyParser: { sizeLimit: '70mb' } },
+};
+
 const PROMPT = `Du er ekspert på norske boligsalgsrapporter og tilstandsrapporter.
 Analyser denne rapporten og returner KUN gyldig JSON (ingen annen tekst, ingen markdown) med denne strukturen:
 
@@ -44,8 +48,8 @@ export async function POST(request: Request) {
 
   const file = formData.get('pdf') as File | null;
   if (!file) return Response.json({ error: 'Ingen fil lastet opp' }, { status: 400 });
-  if (file.size > 20 * 1024 * 1024) {
-    return Response.json({ error: 'Filen er for stor (maks 20 MB)' }, { status: 400 });
+  if (file.size > 70 * 1024 * 1024) {
+    return Response.json({ error: 'Filen er for stor (maks 70 MB)' }, { status: 400 });
   }
 
   try {

@@ -36,7 +36,7 @@ export default function RapportPage() {
 
   const handleFile = (f: File) => {
     if (f.type !== 'application/pdf') { setError('Kun PDF-filer støttes'); return; }
-    if (f.size > 20 * 1024 * 1024) { setError('Filen er for stor (maks 20 MB)'); return; }
+    if (f.size > 70 * 1024 * 1024) { setError('Filen er for stor (maks 70 MB)'); return; }
     setFile(f); setError(''); setResult(null);
   };
 
@@ -130,7 +130,7 @@ export default function RapportPage() {
             ) : (
               <div>
                 <p className="text-slate-300 text-sm font-medium mb-1">Dra og slipp PDF her</p>
-                <p className="text-slate-600 text-xs">eller klikk for å velge fil · Maks 20 MB</p>
+                <p className="text-slate-600 text-xs">eller klikk for å velge fil · Maks 70 MB</p>
               </div>
             )}
           </div>
