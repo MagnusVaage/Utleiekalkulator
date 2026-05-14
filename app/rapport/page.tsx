@@ -3,6 +3,26 @@
 import { useState, useRef, useCallback } from 'react';
 import Link from 'next/link';
 
+async function extractTextFromPDF(file: File): Promise<string> {
+  // Dynamic import so pdfjs-dist only loads when needed
+  const pdfjsLib = await import('pdfjs-dist');
+  pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
+
+  const buffer = await file.arrayBuffer();
+  const doc = await pdfjsLib.getDocument({ data: buffer }).promise;
+
+  const pages: string[] = [];
+  for (let i = 1; i <= doc.numPages; i++) {
+    const page = await doc.getPage(i);
+    const content = await page.getTextContent();
+    const pageText = content.items
+      .map((item) => ('str' in item ? (item as { str: string }).str : ''))
+      .join(' ');
+    pages.push(pageText);
+  }
+  return pages.join('\n');
+}
+
 interface TGItem {
   grad: 0 | 1 | 2 | 3;
   kategori: string;
@@ -36,7 +56,6 @@ export default function RapportPage() {
 
   const handleFile = (f: File) => {
     if (f.type !== 'application/pdf') { setError('Kun PDF-filer støttes'); return; }
-    if (f.size > 70 * 1024 * 1024) { setError('Filen er for stor (maks 70 MB)'); return; }
     setFile(f); setError(''); setResult(null);
   };
 
@@ -46,20 +65,31 @@ export default function RapportPage() {
     if (f) handleFile(f);
   }, []);
 
+  const [step, setStep] = useState('');
+
   const analyse = async () => {
     if (!file) return;
     setLoading(true); setError(''); setResult(null);
     try {
-      const fd = new FormData();
-      fd.append('pdf', file);
-      const res = await fetch('/api/rapport', { method: 'POST', body: fd });
+      setStep('Leser PDF...');
+      const text = await extractTextFromPDF(file);
+      if (!text.trim()) {
+        setError('Kunne ikke lese tekst fra PDF-en. Filen kan være skannet eller passordbeskyttet.');
+        return;
+      }
+      setStep('Analyserer rapport...');
+      const res = await fetch('/api/rapport', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text }),
+      });
       const data = await res.json();
       if (data.error) { setError(data.error); return; }
       setResult(data);
-    } catch {
-      setError('Noe gikk galt. Prøv igjen.');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Noe gikk galt. Prøv igjen.');
     } finally {
-      setLoading(false);
+      setLoading(false); setStep('');
     }
   };
 
@@ -130,7 +160,7 @@ export default function RapportPage() {
             ) : (
               <div>
                 <p className="text-slate-300 text-sm font-medium mb-1">Dra og slipp PDF her</p>
-                <p className="text-slate-600 text-xs">eller klikk for å velge fil · Maks 70 MB</p>
+                <p className="text-slate-600 text-xs">eller klikk for å velge fil</p>
               </div>
             )}
           </div>
@@ -142,13 +172,15 @@ export default function RapportPage() {
             {loading ? (
               <span className="flex items-center justify-center gap-2">
                 <span className="animate-spin inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full" />
-                Analyserer rapport...
+                {step || 'Laster...'}
               </span>
             ) : 'Analyser rapport →'}
           </button>
 
           {loading && (
-            <p className="text-center text-slate-500 text-xs mt-2">Dette tar vanligvis 15–30 sekunder</p>
+            <p className="text-center text-slate-500 text-xs mt-2">
+              {step === 'Leser PDF...' ? 'Trekker ut tekst fra PDF — tar 5–20 sek avhengig av størrelse' : 'AI analyserer innholdet — tar vanligvis 10–20 sek'}
+            </p>
           )}
         </div>
 
