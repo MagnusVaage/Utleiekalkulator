@@ -19,30 +19,12 @@ const CITIES: Record<string, number> = {
 
 // ─── Small components ────────────────────────────────────────────────────────
 
-function Toggle({ options, value, onChange }: {
-  options: { label: string; value: string }[];
-  value: string;
-  onChange: (v: string) => void;
-}) {
-  return (
-    <div className="flex rounded-xl p-1 gap-1" style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.08)' }}>
-      {options.map(opt => (
-        <button key={opt.value} type="button" onClick={() => onChange(opt.value)}
-          className={`flex-1 py-2 px-2 rounded-lg text-sm font-medium transition-all ${
-            value === opt.value ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'
-          }`}>
-          {opt.label}
-        </button>
-      ))}
-    </div>
-  );
-}
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({ label, children, hint }: { label: string; children: React.ReactNode; hint?: string }) {
   return (
     <div className="flex flex-col gap-1.5">
       <label className="text-xs font-semibold uppercase tracking-wider text-slate-400">{label}</label>
       {children}
+      {hint && <p className="text-xs text-slate-600 mt-0.5">{hint}</p>}
     </div>
   );
 }
@@ -54,33 +36,13 @@ const inputCls = [
 
 const inputStyle = { background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(255,255,255,0.08)' };
 
-function TInput({ value, onChange, placeholder }: {
-  value: string; onChange: (v: string) => void; placeholder?: string;
+function TInput({ value, onChange, placeholder, readOnly }: {
+  value: string; onChange?: (v: string) => void; placeholder?: string; readOnly?: boolean;
 }) {
   return (
-    <input type="text" value={value} onChange={e => onChange(e.target.value)}
-      placeholder={placeholder} className={inputCls} style={inputStyle} />
-  );
-}
-
-function SliderRow({ label, value, onChange, min, max, step }: {
-  label: string; value: string; onChange: (v: string) => void;
-  min: number; max: number; step: number;
-}) {
-  const num = parseFloat(value) || 0;
-  const pct = Math.min(100, Math.max(0, ((num - min) / (max - min)) * 100));
-  return (
-    <div>
-      <div className="flex justify-between items-baseline mb-2">
-        <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">{label}</span>
-        <span className="text-base font-bold text-blue-400">{value}%</span>
-      </div>
-      <input type="range" min={min} max={max} step={step} value={value}
-        onChange={e => onChange(e.target.value)}
-        className="w-full h-2 rounded-full appearance-none cursor-pointer"
-        style={{ background: `linear-gradient(to right,#3b82f6 ${pct}%,rgba(255,255,255,0.1) ${pct}%)` }} />
-      <div className="flex justify-between text-xs text-slate-600 mt-1"><span>{min}%</span><span>{max}%</span></div>
-    </div>
+    <input type="text" value={value} onChange={e => onChange?.(e.target.value)}
+      placeholder={placeholder} readOnly={readOnly}
+      className={`${inputCls} ${readOnly ? 'opacity-60 cursor-default' : ''}`} style={inputStyle} />
   );
 }
 
@@ -103,6 +65,15 @@ function Card({ children, className }: { children: React.ReactNode; className?: 
   );
 }
 
+function MetricBox({ label, value, color }: { label: string; value: string; color?: string }) {
+  return (
+    <div className="flex flex-col gap-1 p-4 rounded-xl" style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.06)' }}>
+      <span className="text-xs text-slate-500 font-medium">{label}</span>
+      <span className={`text-base font-bold ${color || 'text-white'}`}>{value}</span>
+    </div>
+  );
+}
+
 // ─── Main component ──────────────────────────────────────────────────────────
 
 export default function Home() {
@@ -111,25 +82,21 @@ export default function Home() {
   const [fetchMsg, setFetchMsg] = useState('');
   const [fetchErr, setFetchErr] = useState('');
   const [avdragsfrihet, setAvdragsfrihet] = useState(false);
+  const [leieTab, setLeieTab] = useState('fast');
 
   const [form, setForm] = useState({
-    // Eiendom
-    prisantydning: '', gjeld: '', bra: '', rooms: '2', city: 'oslo',
-    // Klassifisering
-    eierskap: 'privat', eierform: 'selveier',
-    // Inntekt
-    rent: '', ledighetsrate: '0',
-    // Driftskostnader
-    fellesutg: '', kommunale: '', eiendomsskatt: '',
-    avfall: '', forsikring: '', wifi: '', strom: '', andreKostnader: '',
-    vedlikehold: '0', forvaltning: '0',
-    // Oppussing
-    renovering: '', renoveringLaan: '0', verdtEtterRenovering: '',
-    // Finansiering
-    rate: '4.8', termYears: '30', ekPct: '15',
-    laanetype: 'annuitet', refinansiering: '0',
-    // Prognoser
-    inflasjon: '2.5', eiendomsvekst: '3',
+    adresse: '',
+    // Grunnlag
+    prisantydning: '', gjeld: '', ekPct: '15',
+    // Eiendomsinfo (for leieestimat)
+    bra: '', rooms: '2', city: 'oslo',
+    // Lån
+    nominellRente: '4.80', rate: '5.11', termYears: '25', laanetype: 'annuitet',
+    // Utgifter
+    kommunale: '', eiendomsskatt: '', vedlikeholdKr: '', fellesutg: '',
+    wifi: '', strom: '', forsikring: '', utleiemegler: '',
+    // Leieinntekter
+    rent: '', maanederUtleid: '12',
   });
   const setF = (k: string) => (v: string) => setForm(p => ({ ...p, [k]: v }));
 
@@ -143,11 +110,11 @@ export default function Home() {
       const addr = (data.address || '').toLowerCase();
       setForm(p => ({
         ...p,
+        adresse: data.address || '',
         prisantydning: String(data.prisantydning || ''),
         gjeld: String(data.gjeld || ''),
         bra: String(data.bra || ''),
         rooms: String(data.rooms || '2'),
-        // Use raw values: fellesutg is monthly, kommunale is annual
         fellesutg: String(data.fellesutgRaw || ''),
         kommunale: String(data.kommunaleRaw || ''),
         rent: String(data.rent || ''),
@@ -163,90 +130,78 @@ export default function Home() {
     const price = parseInt(form.prisantydning.replace(/\D/g, '')) || 0;
     if (!price) return null;
 
-    const gjeld    = parseInt(form.gjeld.replace(/\D/g, '')) || 0;
-    const total    = price + gjeld;
-    const bra      = parseInt(form.bra) || 50;
-    const rooms    = parseInt(form.rooms) || 2;
-    const rate     = parseFloat(form.rate) || 4.8;
-    const termYears = parseInt(form.termYears) || 30;
-    const ekPct    = parseInt(form.ekPct) || 15;
-    const cityMult = CITIES[form.city] ?? 0.65;
+    const gjeld = parseInt(form.gjeld.replace(/\D/g, '')) || 0;
+    const total = price + gjeld;
+    const bra = parseInt(form.bra) || 50;
+    const rooms = parseInt(form.rooms) || 2;
+    const nominellRente = parseFloat(form.nominellRente) || 4.80;
+    const termYears = parseInt(form.termYears) || 25;
+    const ekPct = parseInt(form.ekPct) || 15;
 
-    const osloBase = rooms <= 1 ? { base: 14444, typBra: 35 }
-      : rooms === 2   ? { base: 18703, typBra: 55 }
-                      : { base: 23260, typBra: 75 };
+    const dokumentavgift = Math.round(price * 0.025);
+
+    const cityMult = CITIES[form.city] ?? 0.65;
+    const osloBase = rooms <= 1 ? { base: 14444, typBra: 35 } : rooms === 2 ? { base: 18703, typBra: 55 } : { base: 23260, typBra: 75 };
     const estimatedRent = Math.round(osloBase.base * cityMult * (bra / osloBase.typBra) * 1.03);
     const rentRaw = parseInt(form.rent.replace(/\D/g, '')) || estimatedRent;
-    const ledighetsratePct = parseFloat(form.ledighetsrate) || 0;
-    const effectiveRent = Math.round(rentRaw * (1 - ledighetsratePct / 100));
+    const maanederUtleid = parseInt(form.maanederUtleid) || 12;
+    const effectiveRent = Math.round(rentRaw * maanederUtleid / 12);
 
-    const fellesutg         = parseInt(form.fellesutg.replace(/\D/g, '')) || Math.round(bra * 38);
-    const kommunale_mnd     = Math.round((parseInt(form.kommunale.replace(/\D/g, '')) || 0) / 12);
+    const fellesutg = parseInt(form.fellesutg.replace(/\D/g, '')) || Math.round(bra * 38);
+    const kommunale_mnd = Math.round((parseInt(form.kommunale.replace(/\D/g, '')) || 0) / 12);
     const eiendomsskatt_mnd = Math.round((parseInt(form.eiendomsskatt.replace(/\D/g, '')) || 0) / 12);
-    const avfall            = parseInt(form.avfall.replace(/\D/g, '')) || 0;
-    const forsikring        = parseInt(form.forsikring.replace(/\D/g, '')) || 0;
-    const wifi              = parseInt(form.wifi.replace(/\D/g, '')) || 0;
-    const strom             = parseInt(form.strom.replace(/\D/g, '')) || 0;
-    const andreKostnader    = parseInt(form.andreKostnader.replace(/\D/g, '')) || 0;
-    const vedlikehold_kr    = Math.round(effectiveRent * (parseFloat(form.vedlikehold) || 0) / 100);
-    const forvaltning_kr    = Math.round(effectiveRent * (parseFloat(form.forvaltning) || 0) / 100);
+    const vedlikehold_mnd = Math.round((parseInt(form.vedlikeholdKr.replace(/\D/g, '')) || 0) / 12);
+    const forsikring = parseInt(form.forsikring.replace(/\D/g, '')) || 0;
+    const wifi = parseInt(form.wifi.replace(/\D/g, '')) || 0;
+    const strom = parseInt(form.strom.replace(/\D/g, '')) || 0;
+    const utleiemegler = parseInt(form.utleiemegler.replace(/\D/g, '')) || 0;
 
-    const operatingCosts = fellesutg + kommunale_mnd + eiendomsskatt_mnd
-      + avfall + forsikring + wifi + strom + andreKostnader + vedlikehold_kr + forvaltning_kr;
-
-    const renovering        = parseInt(form.renovering.replace(/\D/g, '')) || 0;
-    const renoveringLaan_kr = Math.round(renovering * (parseFloat(form.renoveringLaan) || 0) / 100);
-    const verdtEtterRen     = parseInt(form.verdtEtterRenovering.replace(/\D/g, '')) || 0;
+    const operatingCosts = fellesutg + kommunale_mnd + eiendomsskatt_mnd + vedlikehold_mnd + forsikring + wifi + strom + utleiemegler;
 
     const equity = Math.round(total * ekPct / 100);
-    const refinansiering_kr = verdtEtterRen > 0
-      ? Math.round(verdtEtterRen * (parseFloat(form.refinansiering) || 0) / 100) : 0;
-    const loan = Math.max(0, total - equity + renoveringLaan_kr - refinansiering_kr);
+    const loan = Math.max(0, total - equity);
 
-    const monthlyInterest = Math.round(loan * rate / 100 / 12);
-    let pmt!: number, monthlyPrincipal!: number;
+    const monthlyInterest = Math.round(loan * nominellRente / 100 / 12);
+    let pmt = 0, monthlyPrincipal = 0;
     if (avdragsfrihet) {
       pmt = monthlyInterest; monthlyPrincipal = 0;
     } else if (form.laanetype === 'serie') {
       monthlyPrincipal = Math.round(loan / (termYears * 12));
       pmt = monthlyPrincipal + monthlyInterest;
     } else {
-      pmt = calcAnnuitet(loan, rate, termYears);
+      pmt = calcAnnuitet(loan, nominellRente, termYears);
       monthlyPrincipal = Math.max(0, pmt - monthlyInterest);
     }
 
-    const totalCosts    = operatingCosts + pmt;
-    const preTaxCF      = effectiveRent - totalCosts;
-    const deductible    = operatingCosts + monthlyInterest;
-    const taxable       = Math.max(0, effectiveRent - deductible);
-    const monthlyTax    = Math.round(taxable * 0.22);
+    const totalCosts = operatingCosts + pmt;
+    const preTaxCF = effectiveRent - totalCosts;
+    const taxable = Math.max(0, effectiveRent - operatingCosts - monthlyInterest);
+    const monthlyTax = Math.round(taxable * 0.22);
     const rentefradragAnnual = Math.round(monthlyInterest * 12 * 0.22);
-    const afterTaxCF    = preTaxCF - monthlyTax;
-    const bruttoCF      = preTaxCF;
+    const afterTaxCF = preTaxCF - monthlyTax;
 
-    const kontantbehov      = equity + renovering - renoveringLaan_kr;
-    const marketValue       = verdtEtterRen > 0 ? verdtEtterRen : total;
-    const gjeldsgrad        = total > 0 ? Math.round(loan / total * 1000) / 10 : 0;
     const netOperatingIncome = (effectiveRent - operatingCosts) * 12;
-    const grossYield        = total > 0 ? Math.round((effectiveRent * 12) / total * 1000) / 10 : 0;
-    const nettoYieldKost    = total > 0 ? Math.round(netOperatingIncome / total * 1000) / 10 : 0;
-    const nettoYieldMarked  = marketValue > 0 ? Math.round(netOperatingIncome / marketValue * 1000) / 10 : 0;
+    const nettoYield = total > 0 ? Math.round(netOperatingIncome / total * 1000) / 10 : 0;
     const arligNettofortjeneste = afterTaxCF * 12;
-    const roi = kontantbehov > 0
-      ? Math.round((arligNettofortjeneste + monthlyPrincipal * 12) / kontantbehov * 1000) / 10 : 0;
-    const gjenvaerende = Math.round(kontantbehov - afterTaxCF * 12 * 10);
+    const roi = equity > 0 ? Math.round((arligNettofortjeneste + monthlyPrincipal * 12) / equity * 1000) / 10 : 0;
+
+    const totalLoanPayment = pmt * termYears * 12;
+    const totalInterest = Math.max(0, totalLoanPayment - loan);
 
     return {
-      total, bra, rooms, effectiveRent, fellesutg, operatingCosts,
-      loan, equity, ekPct, pmt, monthlyInterest, monthlyPrincipal,
-      totalCosts, preTaxCF, bruttoCF, monthlyTax, afterTaxCF, rentefradragAnnual,
-      grossYield, nettoYieldKost, nettoYieldMarked, gjeldsgrad,
-      arligNettofortjeneste, kontantbehov, roi, gjenvaerende,
-      marketValue, rate, termYears, estimatedRent,
+      total, dokumentavgift, effectiveRent, estimatedRent,
+      fellesutg, operatingCosts,
+      loan, equity, pmt, monthlyInterest, monthlyPrincipal,
+      totalCosts, afterTaxCF, monthlyTax, rentefradragAnnual,
+      nettoYield, arligNettofortjeneste, roi,
+      totalLoanPayment, totalInterest,
     };
   }, [form, avdragsfrihet]);
 
   const isPos = calc ? calc.afterTaxCF >= 0 : false;
+  const ekPct_frac = ((parseInt(form.ekPct) - 10) / 40) * 100;
+  const termPct = ((parseInt(form.termYears) - 5) / 25) * 100;
+  const maanederPct = ((parseInt(form.maanederUtleid) - 1) / 11) * 100;
 
   return (
     <div className="min-h-screen" style={{ background: '#0d1b2e' }}>
@@ -272,179 +227,229 @@ export default function Home() {
         </div>
       </header>
 
-      {/* Two-column layout */}
       <div className="max-w-6xl mx-auto px-4 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_390px] gap-6 items-start">
 
           {/* ── LEFT: INPUTS ── */}
           <div className="flex flex-col gap-5">
 
-            {/* Finn.no */}
+            {/* 1. Informasjon */}
             <Card>
-              <h2 className="font-semibold text-white mb-4">Hent eiendom fra Finn.no</h2>
-              <div className="flex gap-2">
-                <input type="url" value={url} onChange={e => setUrl(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && fetchFromFinn()}
-                  placeholder="Lim inn Finn.no-lenke her..."
-                  className={inputCls} style={inputStyle} />
-                <button onClick={fetchFromFinn} disabled={fetching || !url.trim()}
-                  className="px-5 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-500 disabled:opacity-40 transition-all whitespace-nowrap">
-                  {fetching ? '...' : 'Hent'}
-                </button>
+              <h2 className="font-semibold text-white mb-1">Informasjon</h2>
+              <p className="text-xs text-slate-500 mb-4">Boliginformasjon fra FINN</p>
+              <div className="flex flex-col gap-4">
+                <Field label="Finn-link">
+                  <div className="flex gap-2">
+                    <input type="url" value={url} onChange={e => setUrl(e.target.value)}
+                      onKeyDown={e => e.key === 'Enter' && fetchFromFinn()}
+                      placeholder="https://www.finn.no/realestate/..."
+                      className={inputCls} style={inputStyle} />
+                    <button onClick={fetchFromFinn} disabled={fetching || !url.trim()}
+                      className="px-4 py-2.5 bg-emerald-600 text-white text-sm font-semibold rounded-xl hover:bg-emerald-500 disabled:opacity-40 transition-all whitespace-nowrap">
+                      {fetching ? '...' : '🔒 Hent fra FINN'}
+                    </button>
+                  </div>
+                  {fetchMsg && <p className="mt-1 text-emerald-400 text-xs font-medium">{fetchMsg}</p>}
+                  {fetchErr && <p className="mt-1 text-red-400 text-xs">{fetchErr}</p>}
+                </Field>
+                <Field label="Adresse">
+                  <TInput value={form.adresse} onChange={setF('adresse')} placeholder="Adresse" />
+                </Field>
               </div>
-              {fetchMsg && <p className="mt-2 text-emerald-400 text-xs font-medium">{fetchMsg}</p>}
-              {fetchErr && <p className="mt-2 text-red-400 text-xs">{fetchErr}</p>}
             </Card>
 
-
-            {/* Eiendomsdetaljer */}
+            {/* 2. Grunnlag */}
             <Card>
-              <h2 className="font-semibold text-white mb-5">Eiendomsdetaljer</h2>
+              <div className="flex justify-between items-center mb-5">
+                <h2 className="font-semibold text-white">Grunnlag</h2>
+                <span className="text-xs text-slate-500">Formatering og autofyll</span>
+              </div>
               <div className="grid grid-cols-2 gap-4">
-                <Field label="Prisantydning *">
-                  <TInput value={form.prisantydning} onChange={setF('prisantydning')} placeholder="3 500 000 kr" />
+                <Field label="Kjøpssum">
+                  <TInput value={form.prisantydning} onChange={setF('prisantydning')} placeholder="1 000 000" />
+                </Field>
+                <Field label="Dokumentavgift og tinglysing (2,5%)">
+                  <TInput value={calc ? `${fmt(calc.dokumentavgift)} kr` : ''} placeholder="25 000 kr" readOnly />
+                </Field>
+                <div className="col-span-2">
+                  <div className="flex flex-col gap-2">
+                    <label className="text-xs font-semibold uppercase tracking-wider text-slate-400">Egenkapital %</label>
+                    <div className="flex gap-3 items-center">
+                      <input type="range" min={10} max={50} step={1} value={form.ekPct}
+                        onChange={e => setF('ekPct')(e.target.value)}
+                        className="flex-1 h-2 rounded-full appearance-none cursor-pointer"
+                        style={{ background: `linear-gradient(to right,#3b82f6 ${ekPct_frac}%,rgba(255,255,255,0.1) ${ekPct_frac}%)` }} />
+                      <div className="flex items-center gap-1">
+                        <input type="number" value={form.ekPct} onChange={e => setF('ekPct')(e.target.value)}
+                          className="w-14 text-center rounded-lg py-1.5 text-sm text-white font-bold focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          style={inputStyle} min={10} max={50} />
+                        <span className="text-sm text-slate-400">%</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <Field label="Egenkapital (beløp)"
+                  hint="Beregnes fra kjøpssum × % – justeres mht. oppussing ved lån.">
+                  <TInput value={calc ? `${fmt(calc.equity)} kr` : ''} placeholder="175 000 kr" readOnly />
                 </Field>
                 <Field label="Fellesgjeld">
                   <TInput value={form.gjeld} onChange={setF('gjeld')} placeholder="0 kr" />
                 </Field>
-                <Field label="Størrelse (m²)">
-                  <TInput value={form.bra} onChange={setF('bra')} placeholder="60" />
-                </Field>
-                <Field label="By">
-                  <select value={form.city} onChange={e => setF('city')(e.target.value)}
-                    className={inputCls} style={inputStyle}>
-                    <option value="oslo">Oslo</option>
-                    <option value="bergen">Bergen</option>
-                    <option value="stavanger">Stavanger</option>
-                    <option value="trondheim">Trondheim</option>
-                    <option value="annet">Annet sted</option>
-                  </select>
-                </Field>
-                <div className="col-span-2">
-                  <Field label="Antall rom">
-                    <Toggle
-                      options={[{ label: '1 rom', value: '1' }, { label: '2 rom', value: '2' }, { label: '3 rom', value: '3' }, { label: '4+ rom', value: '4' }]}
-                      value={form.rooms} onChange={setF('rooms')} />
+              </div>
+            </Card>
+
+            {/* 3. Lån */}
+            <Card>
+              <div className="flex justify-between items-center mb-5">
+                <h2 className="font-semibold text-white">Lån</h2>
+                <span className="text-xs text-slate-500">Nominell ↔ Effektiv</span>
+              </div>
+              <div className="flex flex-col gap-5">
+                <div className="grid grid-cols-2 gap-4">
+                  <Field label="Nominell rente (p.a.)">
+                    <TInput value={form.nominellRente} onChange={setF('nominellRente')} placeholder="4,99 %" />
+                  </Field>
+                  <Field label="Effektiv rente (p.a.)">
+                    <TInput value={form.rate} onChange={setF('rate')} placeholder="5,11 %" />
                   </Field>
                 </div>
-              </div>
-            </Card>
-
-            {/* Leieinntekt */}
-            <Card>
-              <h2 className="font-semibold text-white mb-5">Leieinntekt</h2>
-              <div className="flex flex-col gap-5">
-                <Field label="Leieinntekt pr mnd">
-                  <TInput value={form.rent} onChange={setF('rent')}
-                    placeholder={calc ? `Estimert: ${fmt(calc.estimatedRent)} kr` : 'Estimeres automatisk'} />
-                  {calc && !form.rent && <p className="text-xs text-slate-500 mt-1">Estimat basert på hybel.no 2026</p>}
-                </Field>
-                <SliderRow label="Ledighetsrate" value={form.ledighetsrate} onChange={setF('ledighetsrate')}
-                  min={0} max={20} step={0.5} />
-              </div>
-            </Card>
-
-            {/* Driftskostnader */}
-            <Card>
-              <h2 className="font-semibold text-white mb-5">Driftskostnader</h2>
-              <div className="grid grid-cols-2 gap-4">
-                <Field label="Felleskost pr mnd">
-                  <TInput value={form.fellesutg} onChange={setF('fellesutg')}
-                    placeholder={calc ? `Est. ${fmt(calc.fellesutg)} kr` : 'Estimeres'} />
-                </Field>
-                <Field label="Kommunale avg. pr år">
-                  <TInput value={form.kommunale} onChange={setF('kommunale')} placeholder="0 kr" />
-                </Field>
-                <Field label="Eiendomsskatt pr år">
-                  <TInput value={form.eiendomsskatt} onChange={setF('eiendomsskatt')} placeholder="0 kr" />
-                </Field>
-                <Field label="Avfallshåndtering pr mnd">
-                  <TInput value={form.avfall} onChange={setF('avfall')} placeholder="0 kr" />
-                </Field>
-                <Field label="Forsikring pr mnd">
-                  <TInput value={form.forsikring} onChange={setF('forsikring')} placeholder="0 kr" />
-                </Field>
-                <Field label="WiFi/TV pr mnd">
-                  <TInput value={form.wifi} onChange={setF('wifi')} placeholder="0 kr" />
-                </Field>
-                <Field label="Strøm pr mnd">
-                  <TInput value={form.strom} onChange={setF('strom')} placeholder="0 kr" />
-                </Field>
-                <Field label="Andre kostnader pr mnd">
-                  <TInput value={form.andreKostnader} onChange={setF('andreKostnader')} placeholder="0 kr" />
-                </Field>
-                <div className="col-span-2">
-                  <SliderRow label="Vedlikeholdskostnader" value={form.vedlikehold} onChange={setF('vedlikehold')}
-                    min={0} max={10} step={0.5} />
-                </div>
-                <div className="col-span-2">
-                  <SliderRow label="Forvaltningshonorar" value={form.forvaltning} onChange={setF('forvaltning')}
-                    min={0} max={15} step={0.5} />
-                </div>
-              </div>
-            </Card>
-
-            {/* Oppussing */}
-            <Card>
-              <h2 className="font-semibold text-white mb-5">Oppussing</h2>
-              <div className="flex flex-col gap-5">
-                <Field label="Renoveringskostnader">
-                  <TInput value={form.renovering} onChange={setF('renovering')} placeholder="0 kr" />
-                </Field>
-                <SliderRow label="Lånefinansiering av renovering" value={form.renoveringLaan}
-                  onChange={setF('renoveringLaan')} min={0} max={100} step={5} />
-                <Field label="Verdi etter renovering">
-                  <TInput value={form.verdtEtterRenovering} onChange={setF('verdtEtterRenovering')} placeholder="0 kr" />
-                </Field>
-              </div>
-            </Card>
-
-            {/* Finansiering */}
-            <Card>
-              <h2 className="font-semibold text-white mb-5">Finansiering</h2>
-              <div className="flex flex-col gap-5">
-                <SliderRow label="Effektiv rente" value={form.rate} onChange={setF('rate')} min={2} max={10} step={0.1} />
                 <div>
                   <div className="flex justify-between items-baseline mb-2">
-                    <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Egenkapital</span>
-                    <span className="text-base font-bold text-purple-400">
-                      {calc ? `${fmt(calc.equity)} kr` : '—'} ({form.ekPct}%)
-                    </span>
+                    <label className="text-xs font-semibold uppercase tracking-wider text-slate-400">Løpetid (år)</label>
+                    <div className="flex items-center gap-1">
+                      <span className="text-base font-bold text-blue-400">{form.termYears}</span>
+                      <span className="text-sm text-slate-400">år</span>
+                    </div>
                   </div>
-                  <input type="range" min={10} max={50} step={1} value={form.ekPct}
-                    onChange={e => setF('ekPct')(e.target.value)}
+                  <input type="range" min={5} max={30} step={1} value={form.termYears}
+                    onChange={e => setF('termYears')(e.target.value)}
                     className="w-full h-2 rounded-full appearance-none cursor-pointer"
-                    style={{ background: `linear-gradient(to right,#9333ea ${((parseInt(form.ekPct) - 10) / 40) * 100}%,rgba(255,255,255,0.1) ${((parseInt(form.ekPct) - 10) / 40) * 100}%)` }} />
-                  <div className="flex justify-between text-xs text-slate-600 mt-1"><span>10%</span><span>50%</span></div>
+                    style={{ background: `linear-gradient(to right,#3b82f6 ${termPct}%,rgba(255,255,255,0.1) ${termPct}%)` }} />
+                  <div className="flex justify-between text-xs text-slate-600 mt-1"><span>5 år</span><span>30 år</span></div>
                 </div>
-                <Field label="Nedbetalingstid">
-                  <Toggle options={[{ label: '20 år', value: '20' }, { label: '25 år', value: '25' }, { label: '30 år', value: '30' }]}
-                    value={form.termYears} onChange={setF('termYears')} />
-                </Field>
-                <Field label="Lånetype">
-                  <Toggle options={[{ label: 'Annuitetslån', value: 'annuitet' }, { label: 'Serielån', value: 'serie' }]}
-                    value={form.laanetype} onChange={setF('laanetype')} />
-                </Field>
-                <label className="flex items-center gap-3 cursor-pointer select-none">
-                  <input type="checkbox" checked={avdragsfrihet} onChange={e => setAvdragsfrihet(e.target.checked)}
-                    className="w-4 h-4 rounded accent-blue-500" />
-                  <span className="text-sm text-slate-300">Avdragsfrihet</span>
+                <label className="flex items-center gap-3 cursor-pointer select-none p-3 rounded-xl" style={{ background: 'rgba(0,0,0,0.2)' }}>
+                  <div className="relative inline-block w-10 h-6" onClick={() => setAvdragsfrihet(v => !v)}>
+                    <div className={`w-10 h-6 rounded-full transition-colors ${avdragsfrihet ? 'bg-blue-600' : 'bg-slate-700'}`} />
+                    <div className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${avdragsfrihet ? 'translate-x-4' : 'translate-x-0'}`} />
+                  </div>
+                  <span className="text-sm text-white">Avdragsfritt lån (kun rentebetaling)</span>
                 </label>
-                <SliderRow label="Refinansiering av verdi" value={form.refinansiering}
-                  onChange={setF('refinansiering')} min={0} max={85} step={5} />
               </div>
             </Card>
 
-            {/* Fremtidsprognoser */}
+            {/* 4. Utgifter */}
             <Card>
-              <h2 className="font-semibold text-white mb-5">Fremtidsprognoser</h2>
-              <div className="flex flex-col gap-5">
-                <SliderRow label="Økning i leie og kostnader (inflasjon)" value={form.inflasjon}
-                  onChange={setF('inflasjon')} min={0} max={10} step={0.5} />
-                <SliderRow label="Forventet vekst i eiendomsverdi" value={form.eiendomsvekst}
-                  onChange={setF('eiendomsvekst')} min={0} max={10} step={0.5} />
+              <div className="flex justify-between items-center mb-5">
+                <h2 className="font-semibold text-white">Utgifter</h2>
+                <span className="text-xs text-slate-500">Standard + egendefinerte</span>
+              </div>
+              <div className="grid grid-cols-4 gap-3 mb-5">
+                <Field label="Kommunale avg. (år)">
+                  <TInput value={form.kommunale} onChange={setF('kommunale')} placeholder="100" />
+                </Field>
+                <Field label="Eiendomsskatt (år)">
+                  <TInput value={form.eiendomsskatt} onChange={setF('eiendomsskatt')} placeholder="" />
+                </Field>
+                <Field label="Vedlikehold (år)">
+                  <TInput value={form.vedlikeholdKr} onChange={setF('vedlikeholdKr')} placeholder="" />
+                </Field>
+                <Field label="Felleskostn. (mnd)">
+                  <TInput value={form.fellesutg} onChange={setF('fellesutg')}
+                    placeholder={calc ? `${fmt(calc.fellesutg)}` : '100'} />
+                </Field>
+                <Field label="Wifi/TV (mnd)">
+                  <TInput value={form.wifi} onChange={setF('wifi')} placeholder="" />
+                </Field>
+                <Field label="Strøm (mnd)">
+                  <TInput value={form.strom} onChange={setF('strom')} placeholder="100" />
+                </Field>
+                <Field label="Forsikring (mnd)">
+                  <TInput value={form.forsikring} onChange={setF('forsikring')} placeholder="" />
+                </Field>
+                <Field label="Utleiemegler (mnd)">
+                  <TInput value={form.utleiemegler} onChange={setF('utleiemegler')} placeholder="" />
+                </Field>
+              </div>
+              <div className="flex justify-between items-center pt-4" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+                <div>
+                  <p className="text-sm font-medium text-white">Egendefinerte utgifter</p>
+                  <p className="text-xs text-slate-500 mt-0.5">Velg månedlig eller årlig. Beløp formateres automatisk.</p>
+                </div>
+                <button className="text-xs text-blue-400 font-medium hover:text-blue-300 transition-colors px-3 py-1.5 rounded-lg"
+                  style={{ border: '1px solid rgba(59,130,246,0.3)' }}>
+                  Legg til utgift
+                </button>
               </div>
             </Card>
+
+            {/* 5. Leieinntekter */}
+            <Card>
+              <div className="flex justify-between items-center mb-5">
+                <h2 className="font-semibold text-white">Leieinntekter</h2>
+                <span className="text-xs text-slate-500">Velg modell</span>
+              </div>
+              <div className="grid grid-cols-4 gap-1 p-1 rounded-xl mb-5"
+                style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                {[
+                  { id: 'korttid', label: 'Korttidsleie' },
+                  { id: 'fast', label: 'Fast månedsleie' },
+                  { id: 'kollektiv', label: 'Kollektiv' },
+                  { id: 'langkorttid', label: 'Lang og korttidsleie' },
+                ].map(tab => (
+                  <button key={tab.id} type="button" onClick={() => setLeieTab(tab.id)}
+                    className={`py-2 px-1 rounded-lg text-xs font-medium transition-all ${
+                      leieTab === tab.id ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'
+                    }`}>
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+
+              {leieTab === 'fast' ? (
+                <div className="flex flex-col gap-5">
+                  <div className="grid grid-cols-2 gap-4">
+                    <Field label="Månedsleie">
+                      <TInput value={form.rent} onChange={setF('rent')}
+                        placeholder={calc ? `${fmt(calc.estimatedRent)}` : ''} />
+                    </Field>
+                    <div>
+                      <div className="flex justify-between items-baseline mb-2">
+                        <label className="text-xs font-semibold uppercase tracking-wider text-slate-400">Antall måneder utleid per år</label>
+                        <div className="flex items-center gap-1">
+                          <span className="text-base font-bold text-blue-400">{form.maanederUtleid}</span>
+                          <span className="text-sm text-slate-400">mnd</span>
+                        </div>
+                      </div>
+                      <input type="range" min={1} max={12} step={1} value={form.maanederUtleid}
+                        onChange={e => setF('maanederUtleid')(e.target.value)}
+                        className="w-full h-2 rounded-full appearance-none cursor-pointer"
+                        style={{ background: `linear-gradient(to right,#3b82f6 ${maanederPct}%,rgba(255,255,255,0.1) ${maanederPct}%)` }} />
+                      <div className="flex justify-between text-xs text-slate-600 mt-1"><span>1 mnd</span><span>12 mnd</span></div>
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500 mb-2">Sammenlign utleiepriser:</p>
+                    <div className="flex gap-2">
+                      <a href="https://www.finn.no/realestate/lettings/search.html" target="_blank" rel="noopener noreferrer"
+                        className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-medium text-white transition-all hover:opacity-80"
+                        style={{ background: 'rgba(0,80,200,0.25)', border: '1px solid rgba(0,100,220,0.4)' }}>
+                        🔵 Søk på FINN
+                      </a>
+                      <a href="https://hybel.no" target="_blank" rel="noopener noreferrer"
+                        className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-medium text-white transition-all hover:opacity-80"
+                        style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)' }}>
+                        🏠 Søk på Hybel
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-8 text-slate-500 text-sm">
+                  Denne modellen kommer snart
+                </div>
+              )}
+            </Card>
+
           </div>
 
           {/* ── RIGHT: RESULTS (sticky) ── */}
@@ -452,89 +457,53 @@ export default function Home() {
             {!calc ? (
               <Card className="text-center py-12">
                 <div className="text-5xl mb-4">🏠</div>
-                <p className="text-slate-400 text-sm leading-relaxed">Fyll inn prisantydning<br />for å se analysen</p>
+                <p className="text-slate-400 text-sm leading-relaxed">Fyll inn kjøpssum<br />for å se analysen</p>
               </Card>
             ) : (
               <>
-                {/* Verdict */}
-                <div className="rounded-2xl p-6 text-center" style={{
-                  background: isPos ? 'linear-gradient(135deg,#052e16,#14532d)' : 'linear-gradient(135deg,#3b0a0a,#7f1d1d)',
-                  border: `1.5px solid ${isPos ? '#16a34a' : '#dc2626'}`,
-                }}>
-                  <div className="text-sm text-slate-300 mb-1">{isPos ? 'Du tjener' : 'Dette koster deg'}</div>
-                  <div className="text-5xl font-black mb-1" style={{ color: isPos ? '#34d399' : '#f87171' }}>
-                    {isPos ? '+' : ''}{fmt(calc.afterTaxCF)} kr
-                  </div>
-                  <div className="text-xs text-slate-400">per måned, etter skatt</div>
-                </div>
-
-                {/* Oppsummering */}
+                {/* Resultat */}
                 <Card>
-                  <h3 className="font-semibold text-white mb-1 text-sm">Oppsummering</h3>
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="font-semibold text-white">Resultat</h3>
+                    <span className="text-xs text-slate-500">Oppsummering</span>
+                  </div>
+                  <div className="text-center mb-5 p-4 rounded-xl" style={{ background: 'rgba(0,0,0,0.2)' }}>
+                    <p className="text-xs text-slate-400 mb-1 uppercase tracking-wider">Månedlig kontantstrøm</p>
+                    <p className={`text-4xl font-black ${isPos ? 'text-emerald-400' : 'text-red-400'}`}>
+                      {isPos ? '+' : ''}{fmt(calc.afterTaxCF)} kr
+                    </p>
+                    <p className="text-xs text-slate-500 mt-1">Netto (etter alle utgifter)</p>
+                  </div>
                   <div>
-                    <SRow label="Månedlig netto kontantstrøm" bold
-                      value={`${isPos ? '+' : ''}${fmt(calc.afterTaxCF)} kr`}
-                      color={isPos ? 'text-emerald-400' : 'text-red-400'} />
-                    <SRow label="Årlig nettofortjeneste"
+                    <SRow label="Årlig kontantstrøm"
                       value={`${calc.arligNettofortjeneste >= 0 ? '+' : ''}${fmt(calc.arligNettofortjeneste)} kr`}
                       color={calc.arligNettofortjeneste >= 0 ? 'text-emerald-400' : 'text-red-400'} />
-                    <SRow label="Kontantbehov" value={`${fmt(calc.kontantbehov)} kr`} />
-                    <SRow label="Eiendomsverdi" value={`${fmt(calc.total)} kr`} />
-                    <SRow label="Egenkapital" value={`${fmt(calc.equity)} kr`} />
-                    <SRow label="Gjeld" value={`${fmt(calc.loan)} kr`} />
-                    <SRow label="Gjeldsgrad" value={`${calc.gjeldsgrad}%`} />
-                    <SRow label="Gjenværende inv. kapital (10 år)" value={`${fmt(calc.gjenvaerende)} kr`} />
-                    <SRow label="ROI" value={`${calc.roi}%`} color={calc.roi > 0 ? 'text-emerald-400' : 'text-red-400'} />
-                    <SRow label="Netto yield (kost)" value={`${calc.nettoYieldKost}%`} />
-                    <SRow label="Netto yield (marked)" value={`${calc.nettoYieldMarked}%`} />
+                    <SRow label="Yield (netto)" value={`${calc.nettoYield} %`} />
+                    <SRow label="ROI (netto)" value={`${calc.roi} %`}
+                      color={calc.roi > 0 ? 'text-emerald-400' : 'text-red-400'} />
+                    <SRow label="Utgifter i året" value={`${fmt(calc.operatingCosts * 12)} kr`} />
                   </div>
                 </Card>
 
-                {/* Månedlig */}
+                {/* Lån details */}
                 <Card>
-                  <h3 className="font-semibold text-white mb-1 text-sm">Månedlig</h3>
-                  <div>
-                    <SRow label="Leieinntekt pr mnd" value={`+${fmt(calc.effectiveRent)} kr`} color="text-emerald-400" />
-                    <SRow label="Utgifter (sum)" value={`−${fmt(calc.totalCosts)} kr`} />
-                    <SRow label="↳ Renter" value={`−${fmt(calc.monthlyInterest)} kr`} />
-                    <SRow label="↳ Avdrag" value={`−${fmt(calc.monthlyPrincipal)} kr`} />
-                    <SRow label="Brutto kontantstrøm"
-                      value={`${calc.bruttoCF >= 0 ? '+' : ''}${fmt(calc.bruttoCF)} kr`}
-                      color={calc.bruttoCF >= 0 ? 'text-emerald-400' : 'text-red-400'} />
-                    <SRow label="Skatt (22%)" value={`−${fmt(calc.monthlyTax)} kr`} />
-                    <SRow label="🇳🇴 Rentefradrag" value={`+${fmt(calc.rentefradragAnnual)} kr/år`} color="text-emerald-400" />
-                    <SRow label="Netto kontantstrøm" bold
-                      value={`${isPos ? '+' : ''}${fmt(calc.afterTaxCF)} kr`}
-                      color={isPos ? 'text-emerald-400' : 'text-red-400'} />
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="font-semibold text-white">Lån</h3>
+                    <span className="text-xs text-slate-500">Detaljer</span>
                   </div>
-                </Card>
-
-                {/* Lån */}
-                <Card>
-                  <h3 className="font-semibold text-white mb-3 text-sm">Lån</h3>
-                  <div className="flex flex-col gap-2.5">
-                    {([
-                      { label: 'Lånetype', value: avdragsfrihet ? 'Avdragsfrihet' : form.laanetype === 'serie' ? 'Serielån' : 'Annuitetslån' },
-                      { label: 'Eiendomsverdi', value: `${fmt(calc.total)} kr` },
-                      { label: 'Gjeldsgrad', value: `${calc.gjeldsgrad}%` },
-                      { label: 'Egenkapital', value: `${fmt(calc.equity)} kr` },
-                      { label: 'Lån', value: `${fmt(calc.loan)} kr` },
-                      { label: 'Effektiv rente', value: `${calc.rate}%` },
-                      { label: 'Nedbetalingstid lån', value: `${calc.termYears} år` },
-                      { label: 'Månedlig betaling', value: `${fmt(calc.pmt)} kr` },
-                      { label: 'Herav renter', value: `${fmt(calc.monthlyInterest)} kr` },
-                      { label: 'Herav avdrag', value: `${fmt(calc.monthlyPrincipal)} kr` },
-                    ] as { label: string; value: string }[]).map(row => (
-                      <div key={row.label} className="flex justify-between text-sm">
-                        <span className="text-slate-400">{row.label}</span>
-                        <span className="font-medium text-white">{row.value}</span>
-                      </div>
-                    ))}
+                  <div className="grid grid-cols-2 gap-3">
+                    <MetricBox label="Lån i måneden" value={`${fmt(calc.pmt)} kr`} color="text-red-400" />
+                    <MetricBox label="Renter i måneden" value={`${fmt(calc.monthlyInterest)} kr`} color="text-red-400" />
+                    <MetricBox label="Avdrag i måneden" value={`${fmt(calc.monthlyPrincipal)} kr`} color="text-red-400" />
+                    <MetricBox label="Rentefradrag" value={`${fmt(calc.rentefradragAnnual)} kr`} color="text-emerald-400" />
+                    <MetricBox label="Totalpris på lån" value={`${fmt(calc.totalLoanPayment)} kr`} />
+                    <MetricBox label="Renter totalt" value={`${fmt(calc.totalInterest)} kr`} />
                   </div>
                 </Card>
               </>
             )}
           </div>
+
         </div>
       </div>
 
@@ -546,8 +515,8 @@ export default function Home() {
             { q: 'Hva er brutto yield på utleiebolig?', a: 'Brutto yield er den årlige leieinntekten delt på kjøpesummen, oppgitt i prosent. En bolig til 3 millioner kroner med 15 000 kr i månedlig leie gir en brutto yield på 6 %. I Norge regnes 5 % eller mer som et godt utgangspunkt.' },
             { q: 'Hva er rentefradrag og hvor mye sparer jeg?', a: 'Når du leier ut bolig, kan du trekke fra renteutgiftene på skatten. Staten dekker 22 % av rentekostnadene dine. Har du 10 000 kr i månedlige renter, sparer du 26 400 kr i året — penger som kommer tilbake som skatteoppgjør.' },
             { q: 'Hva er forskjellen på annuitetslån og serielån?', a: 'Annuitetslån har fast månedlig betaling — mer renter i starten, mer avdrag mot slutten. Serielån har fast avdrag og synkende renter, noe som gir høyere betaling i starten men lavere totalkostnad over tid.' },
-            { q: 'Hva betyr ledighetsrate?', a: 'Ledighetsrate er andelen tid boligen står tom mellom leieforhold. En ledighetsrate på 4 % tilsvarer ca. 2 uker per år uten leie. Kalkulatoren trekker dette fra leieinntekten automatisk.' },
-            { q: 'Kan jeg bruke kalkulatoren på Finn.no-annonser?', a: 'Ja! Lim inn en Finn.no-lenke øverst, trykk «Hent», og alle tall hentes automatisk. Du kan justere tallene manuelt etterpå.' },
+            { q: 'Hva betyr antall måneder utleid?', a: 'Antall måneder utleid per år lar deg justere for perioder boligen står tom. 12 måneder betyr full utleie. 11 måneder tilsvarer ca. 8 % ledighet — omtrent 2 uker per halvår.' },
+            { q: 'Kan jeg bruke kalkulatoren på Finn.no-annonser?', a: 'Ja! Lim inn en Finn.no-lenke øverst, trykk «Hent fra FINN», og alle tall hentes automatisk. Du kan justere tallene manuelt etterpå.' },
           ].map(({ q, a }) => (
             <div key={q} className="rounded-2xl p-5" style={cardStyle}>
               <h3 className="font-semibold text-white mb-2 text-sm">{q}</h3>
@@ -560,7 +529,7 @@ export default function Home() {
       {/* Footer */}
       <footer className="px-6 py-8 text-center" style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}>
         <p className="text-xs text-slate-600">
-          © {new Date().getFullYear()} Utleiekalkulator · Leiepriser fra hybel.no · Rente fra Fana Sparebank · Ikke finansiell rådgivning
+          © {new Date().getFullYear()} Utleiekalkulator · Leiepriser fra hybel.no · Ikke finansiell rådgivning
         </p>
       </footer>
     </div>
