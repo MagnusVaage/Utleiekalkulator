@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import Link from 'next/link';
 
 const fmt = (n: number) => new Intl.NumberFormat('nb-NO').format(Math.round(n));
 
@@ -260,7 +261,14 @@ export default function Home() {
             </div>
             <span className="font-bold text-white text-lg">Utleiekalkulator</span>
           </div>
-          <span className="hidden md:block text-xs text-slate-500">Gratis · Ingen registrering</span>
+          <div className="flex items-center gap-4">
+            <Link href="/rapport"
+              className="hidden md:flex items-center gap-1.5 text-xs text-slate-400 hover:text-white transition-colors px-3 py-1.5 rounded-lg"
+              style={{ border: '1px solid rgba(255,255,255,0.1)' }}>
+              📄 Tilstandsrapport
+            </Link>
+            <span className="hidden md:block text-xs text-slate-600">Gratis · Ingen registrering</span>
+          </div>
         </div>
       </header>
 
