@@ -91,7 +91,7 @@ export default function Home() {
     // Eiendomsinfo (for leieestimat)
     bra: '', rooms: '2', city: 'oslo',
     // Lån
-    nominellRente: '4.80', rate: '5.11', termYears: '25', laanetype: 'annuitet',
+    nominellRente: '4.80', termYears: '25', laanetype: 'annuitet',
     // Utgifter
     kommunale: '', eiendomsskatt: '', vedlikeholdKr: '', fellesutg: '',
     wifi: '', strom: '', forsikring: '', utleiemegler: '',
@@ -135,6 +135,7 @@ export default function Home() {
     const bra = parseInt(form.bra) || 50;
     const rooms = parseInt(form.rooms) || 2;
     const nominellRente = parseFloat(form.nominellRente) || 4.80;
+    const effektivRente = Math.round(((Math.pow(1 + nominellRente / 100 / 12, 12) - 1) * 100) * 100) / 100;
     const termYears = parseInt(form.termYears) || 25;
     const ekPct = parseInt(form.ekPct) || 15;
 
@@ -189,7 +190,7 @@ export default function Home() {
     const totalInterest = Math.max(0, totalLoanPayment - loan);
 
     return {
-      total, dokumentavgift, effectiveRent, estimatedRent,
+      total, dokumentavgift, effectiveRent, estimatedRent, effektivRente,
       fellesutg, operatingCosts,
       loan, equity, pmt, monthlyInterest, monthlyPrincipal,
       totalCosts, afterTaxCF, monthlyTax, rentefradragAnnual,
@@ -298,46 +299,7 @@ export default function Home() {
               </div>
             </Card>
 
-            {/* 3. Lån */}
-            <Card>
-              <div className="flex justify-between items-center mb-5">
-                <h2 className="font-semibold text-white">Lån</h2>
-                <span className="text-xs text-slate-500">Nominell ↔ Effektiv</span>
-              </div>
-              <div className="flex flex-col gap-5">
-                <div className="grid grid-cols-2 gap-4">
-                  <Field label="Nominell rente (p.a.)">
-                    <TInput value={form.nominellRente} onChange={setF('nominellRente')} placeholder="4,99 %" />
-                  </Field>
-                  <Field label="Effektiv rente (p.a.)">
-                    <TInput value={form.rate} onChange={setF('rate')} placeholder="5,11 %" />
-                  </Field>
-                </div>
-                <div>
-                  <div className="flex justify-between items-baseline mb-2">
-                    <label className="text-xs font-semibold uppercase tracking-wider text-slate-400">Løpetid (år)</label>
-                    <div className="flex items-center gap-1">
-                      <span className="text-base font-bold text-blue-400">{form.termYears}</span>
-                      <span className="text-sm text-slate-400">år</span>
-                    </div>
-                  </div>
-                  <input type="range" min={5} max={30} step={1} value={form.termYears}
-                    onChange={e => setF('termYears')(e.target.value)}
-                    className="w-full h-2 rounded-full appearance-none cursor-pointer"
-                    style={{ background: `linear-gradient(to right,#3b82f6 ${termPct}%,rgba(255,255,255,0.1) ${termPct}%)` }} />
-                  <div className="flex justify-between text-xs text-slate-600 mt-1"><span>5 år</span><span>30 år</span></div>
-                </div>
-                <label className="flex items-center gap-3 cursor-pointer select-none p-3 rounded-xl" style={{ background: 'rgba(0,0,0,0.2)' }}>
-                  <div className="relative inline-block w-10 h-6" onClick={() => setAvdragsfrihet(v => !v)}>
-                    <div className={`w-10 h-6 rounded-full transition-colors ${avdragsfrihet ? 'bg-blue-600' : 'bg-slate-700'}`} />
-                    <div className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${avdragsfrihet ? 'translate-x-4' : 'translate-x-0'}`} />
-                  </div>
-                  <span className="text-sm text-white">Avdragsfritt lån (kun rentebetaling)</span>
-                </label>
-              </div>
-            </Card>
-
-            {/* 4. Utgifter */}
+            {/* 3. Utgifter */}
             <Card>
               <div className="flex justify-between items-center mb-5">
                 <h2 className="font-semibold text-white">Utgifter</h2>
@@ -382,7 +344,7 @@ export default function Home() {
               </div>
             </Card>
 
-            {/* 5. Leieinntekter */}
+            {/* 4. Leieinntekter */}
             <Card>
               <div className="flex justify-between items-center mb-5">
                 <h2 className="font-semibold text-white">Leieinntekter</h2>
@@ -448,6 +410,45 @@ export default function Home() {
                   Denne modellen kommer snart
                 </div>
               )}
+            </Card>
+
+            {/* 5. Lån */}
+            <Card>
+              <div className="flex justify-between items-center mb-5">
+                <h2 className="font-semibold text-white">Lån</h2>
+                <span className="text-xs text-slate-500">Nominell → Effektiv beregnes automatisk</span>
+              </div>
+              <div className="flex flex-col gap-5">
+                <div className="grid grid-cols-2 gap-4">
+                  <Field label="Nominell rente (p.a.)">
+                    <TInput value={form.nominellRente} onChange={setF('nominellRente')} placeholder="4,80 %" />
+                  </Field>
+                  <Field label="Effektiv rente (p.a.)" hint="Beregnes fra nominell">
+                    <TInput value={calc ? `${calc.effektivRente} %` : ''} placeholder="5,07 %" readOnly />
+                  </Field>
+                </div>
+                <div>
+                  <div className="flex justify-between items-baseline mb-2">
+                    <label className="text-xs font-semibold uppercase tracking-wider text-slate-400">Løpetid (år)</label>
+                    <div className="flex items-center gap-1">
+                      <span className="text-base font-bold text-blue-400">{form.termYears}</span>
+                      <span className="text-sm text-slate-400">år</span>
+                    </div>
+                  </div>
+                  <input type="range" min={5} max={30} step={1} value={form.termYears}
+                    onChange={e => setF('termYears')(e.target.value)}
+                    className="w-full h-2 rounded-full appearance-none cursor-pointer"
+                    style={{ background: `linear-gradient(to right,#3b82f6 ${termPct}%,rgba(255,255,255,0.1) ${termPct}%)` }} />
+                  <div className="flex justify-between text-xs text-slate-600 mt-1"><span>5 år</span><span>30 år</span></div>
+                </div>
+                <label className="flex items-center gap-3 cursor-pointer select-none p-3 rounded-xl" style={{ background: 'rgba(0,0,0,0.2)' }}>
+                  <div className="relative inline-block w-10 h-6" onClick={() => setAvdragsfrihet(v => !v)}>
+                    <div className={`w-10 h-6 rounded-full transition-colors ${avdragsfrihet ? 'bg-blue-600' : 'bg-slate-700'}`} />
+                    <div className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${avdragsfrihet ? 'translate-x-4' : 'translate-x-0'}`} />
+                  </div>
+                  <span className="text-sm text-white">Avdragsfritt lån (kun rentebetaling)</span>
+                </label>
+              </div>
             </Card>
 
           </div>
