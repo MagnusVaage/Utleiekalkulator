@@ -296,20 +296,6 @@ export default function Home() {
               {fetchErr && <p className="mt-2 text-red-400 text-xs">{fetchErr}</p>}
             </Card>
 
-            {/* Eierskap */}
-            <Card>
-              <h2 className="font-semibold text-white mb-5">Eierskap og type</h2>
-              <div className="flex flex-col gap-4">
-                <Field label="Eierskap">
-                  <Toggle options={[{ label: 'Privat', value: 'privat' }, { label: 'Selskap', value: 'selskap' }]}
-                    value={form.eierskap} onChange={setF('eierskap')} />
-                </Field>
-                <Field label="Eierform">
-                  <Toggle options={[{ label: 'Selveier', value: 'selveier' }, { label: 'Andel/aksje', value: 'andel' }]}
-                    value={form.eierform} onChange={setF('eierform')} />
-                </Field>
-              </div>
-            </Card>
 
             {/* Eiendomsdetaljer */}
             <Card>
