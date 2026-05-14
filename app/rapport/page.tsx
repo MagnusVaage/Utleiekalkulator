@@ -6,7 +6,8 @@ import Link from 'next/link';
 async function extractTextFromPDF(file: File): Promise<string> {
   // Dynamic import so pdfjs-dist only loads when needed
   const pdfjsLib = await import('pdfjs-dist');
-  pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
+  // Served from public/ — copied there by the prebuild script
+  pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
 
   const buffer = await file.arrayBuffer();
   const doc = await pdfjsLib.getDocument({ data: buffer }).promise;
