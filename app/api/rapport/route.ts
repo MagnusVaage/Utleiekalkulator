@@ -25,10 +25,10 @@ Regler:
 - Svar kun på norsk`;
 
 export async function POST(request: Request) {
-  const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey = process.env.GROQ_API_KEY;
   if (!apiKey) {
     return Response.json(
-      { error: 'GEMINI_API_KEY mangler — legg den til i Vercel Environment Variables' },
+      { error: 'GROQ_API_KEY mangler — legg den til i Vercel Environment Variables' },
       { status: 500 },
     );
   }
@@ -46,25 +46,30 @@ export async function POST(request: Request) {
   const truncated = text.slice(0, 40_000);
 
   try {
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: `${PROMPT}\n\n---RAPPORT START---\n${truncated}\n---RAPPORT SLUTT---` }] }],
-          generationConfig: { temperature: 0.2, maxOutputTokens: 2048 },
-        }),
+    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apiKey}`,
       },
-    );
+      body: JSON.stringify({
+        model: 'llama-3.3-70b-versatile',
+        messages: [
+          { role: 'system', content: PROMPT },
+          { role: 'user', content: `---RAPPORT START---\n${truncated}\n---RAPPORT SLUTT---` },
+        ],
+        temperature: 0.2,
+        max_tokens: 2048,
+      }),
+    });
 
     if (!res.ok) {
       const err = await res.text();
-      throw new Error(`Gemini svarte med feil: ${res.status} — ${err.slice(0, 200)}`);
+      throw new Error(`Groq svarte med feil: ${res.status} — ${err.slice(0, 200)}`);
     }
 
     const data = await res.json();
-    const raw = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
+    const raw = data?.choices?.[0]?.message?.content ?? '';
     const jsonMatch = raw.match(/\{[\s\S]*\}/);
     if (!jsonMatch) throw new Error('Kunne ikke tolke AI-svaret');
 
