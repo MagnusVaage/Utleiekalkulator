@@ -1,5 +1,3 @@
-import Anthropic from '@anthropic-ai/sdk';
-
 export const maxDuration = 60;
 
 const PROMPT = `Du er ekspert på norske boligsalgsrapporter og tilstandsrapporter.
@@ -27,10 +25,10 @@ Regler:
 - Svar kun på norsk`;
 
 export async function POST(request: Request) {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
+  const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
     return Response.json(
-      { error: 'ANTHROPIC_API_KEY mangler — legg den til i Vercel Environment Variables' },
+      { error: 'GEMINI_API_KEY mangler — legg den til i Vercel Environment Variables' },
       { status: 500 },
     );
   }
@@ -45,21 +43,28 @@ export async function POST(request: Request) {
   const text = body.text?.trim();
   if (!text) return Response.json({ error: 'Ingen tekst å analysere' }, { status: 400 });
 
-  // Limit to ~120k chars — ample for any property report
   const truncated = text.slice(0, 120_000);
 
   try {
-    const client = new Anthropic({ apiKey });
-    const message = await client.messages.create({
-      model: 'claude-opus-4-5',
-      max_tokens: 2048,
-      messages: [{
-        role: 'user',
-        content: `${PROMPT}\n\n---RAPPORT START---\n${truncated}\n---RAPPORT SLUTT---`,
-      }],
-    });
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: `${PROMPT}\n\n---RAPPORT START---\n${truncated}\n---RAPPORT SLUTT---` }] }],
+          generationConfig: { temperature: 0.2, maxOutputTokens: 2048 },
+        }),
+      },
+    );
 
-    const raw = message.content[0].type === 'text' ? message.content[0].text : '';
+    if (!res.ok) {
+      const err = await res.text();
+      throw new Error(`Gemini svarte med feil: ${res.status} — ${err.slice(0, 200)}`);
+    }
+
+    const data = await res.json();
+    const raw = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
     const jsonMatch = raw.match(/\{[\s\S]*\}/);
     if (!jsonMatch) throw new Error('Kunne ikke tolke AI-svaret');
 
