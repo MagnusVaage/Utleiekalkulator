@@ -43,7 +43,7 @@ export async function POST(request: Request) {
   const text = body.text?.trim();
   if (!text) return Response.json({ error: 'Ingen tekst å analysere' }, { status: 400 });
 
-  const truncated = text.slice(0, 120_000);
+  const truncated = text.slice(0, 40_000);
 
   try {
     const res = await fetch(
