@@ -48,7 +48,12 @@ export async function POST(request: Request) {
   const text = body.text?.trim();
   if (!text) return Response.json({ error: 'Ingen tekst å analysere' }, { status: 400 });
 
-  const truncated = text.slice(0, 20_000);
+  // Find the tilstandsrapport section instead of blindly sending the whole text
+  const tgIndex = text.search(/tilstandsgrad|TILSTANDSGRAD|TG\s*[123]\b/i);
+  const relevant = tgIndex > 500
+    ? text.slice(Math.max(0, tgIndex - 500), tgIndex + 12_000)
+    : text.slice(0, 12_000);
+  const truncated = relevant;
 
   try {
     const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
