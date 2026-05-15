@@ -41,21 +41,21 @@ export default function Page() {
         }}
       />
 
-      <header className="px-6 py-4 sticky top-0 z-10 backdrop-blur"
+      <header className="px-4 sm:px-6 py-3 sm:py-4 sticky top-0 z-10 backdrop-blur"
         style={{ background: 'rgba(13,27,46,0.95)', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-3">
-            <img src="/logo.svg" alt="Utleiekalkulator logo" className="w-9 h-9" />
-            <span className="font-extrabold text-lg bg-gradient-to-r from-white to-blue-400 bg-clip-text text-transparent tracking-tight">Utleiekalkulator</span>
+        <div className="max-w-6xl mx-auto flex items-center justify-between gap-2">
+          <Link href="/" className="flex items-center gap-2 sm:gap-3 shrink-0">
+            <img src="/logo.svg" alt="Utleiekalkulator logo" className="w-8 h-8 sm:w-9 sm:h-9" />
+            <span className="hidden sm:inline font-extrabold text-lg bg-gradient-to-r from-white to-blue-400 bg-clip-text text-transparent tracking-tight">Utleiekalkulator</span>
           </Link>
-          <nav className="flex items-center gap-2">
-            <Link href="/lonner-det-seg-a-leie-ut" className="hidden lg:inline text-sm font-semibold text-blue-200 hover:text-white px-3 py-2 rounded-lg transition-all hover:bg-blue-500/10">
-              💡 Lønner det seg?
+          <nav className="flex items-center gap-1 sm:gap-2">
+            <Link href="/lonner-det-seg-a-leie-ut" aria-label="Lønner det seg?" className="text-base sm:text-sm font-semibold text-blue-200 hover:text-white px-2 sm:px-3 py-2 rounded-lg transition-all hover:bg-blue-500/10 whitespace-nowrap">
+              💡<span className="hidden lg:inline ml-1">Lønner det seg?</span>
             </Link>
-            <Link href="/skatt-leieinntekter" className="hidden lg:inline text-sm font-semibold text-blue-200 hover:text-white px-3 py-2 rounded-lg transition-all hover:bg-blue-500/10">
-              💰 Skatt på utleie
+            <Link href="/skatt-leieinntekter" aria-label="Skatt på utleie" className="text-base sm:text-sm font-semibold text-blue-200 hover:text-white px-2 sm:px-3 py-2 rounded-lg transition-all hover:bg-blue-500/10 whitespace-nowrap">
+              💰<span className="hidden lg:inline ml-1">Skatt på utleie</span>
             </Link>
-            <Link href="/" className="text-sm font-semibold text-white px-4 py-2 rounded-lg transition-all hover:bg-blue-500 ml-2" style={{ background: '#2563eb' }}>
+            <Link href="/" className="flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-white px-2.5 sm:px-4 py-2 rounded-lg transition-all hover:bg-blue-500 ml-1 sm:ml-2 whitespace-nowrap" style={{ background: '#2563eb' }}>
               🧮 Beregn lønnsomhet
             </Link>
           </nav>
