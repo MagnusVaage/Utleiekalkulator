@@ -19,11 +19,11 @@ Analyser denne rapporten og returner KUN gyldig JSON (ingen annen tekst, ingen m
 Regler for TG-gradering:
 - TG3 (grad: 3): Alvorlig avvik — tiltak nødvendig snarest
 - TG2 (grad: 2): Vesentlig avvik — tiltak nødvendig
-- TG1 (grad: 1): Liten avvik — tiltak kan vurderes
+- TG1 (grad: 1): Liten avvik — tiltak kan vurderes på sikt
 - TG0 (grad: 0): Ingen avvik — inkluder KUN om rapporten eksplisitt nevner TG0 med nyttig informasjon
-- Inkluder IKKE elementer der du er usikker på graden — er det TG1 i rapporten, bruk grad 1, ikke 0
-- Inkluder IKKE TG0-elementer med beskrivelse "Ingen TG-merking" eller lignende — utelat dem
-- Beskrivelse skal være presis og kort (maks 12 ord)
+- IKKE bruk "Ingen avvik" som beskrivelse på TG1 — TG1 betyr at det ER et lite avvik, beskriv hva avviket er
+- IKKE utelat noen TG-funn — hent ALLE TG2 og TG3 funn fra rapporten, selv om du finner mange
+- Beskrivelse skal være presis og informativ (maks 12 ord), ikke bare gjenta graden
 - positive = reelle styrker og fordeler
 - negative = risikoer og ting kjøper bør følge opp
 - Minimum 3 positive og 3 negative punkter om mulig
@@ -61,7 +61,7 @@ export async function POST(request: Request) {
     const start = Math.max(0, match.index - 150);
     const end = Math.min(text.length, match.index + 400);
     snippets.push(text.slice(start, end));
-    if (snippets.join('\n').length > 10_000) break;
+    if (snippets.join('\n').length > 14_000) break;
   }
   const truncated = snippets.length > 3
     ? snippets.join('\n---\n')
