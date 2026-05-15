@@ -248,18 +248,18 @@ export default function Home() {
             <img src="/logo.svg" alt="Utleiekalkulator logo" className="w-9 h-9" />
             <span className="font-extrabold text-lg bg-gradient-to-r from-white to-blue-400 bg-clip-text text-transparent tracking-tight">Utleiekalkulator</span>
           </div>
-          <nav className="flex items-center gap-5">
-            <Link href="/lonner-det-seg-a-leie-ut" className="hidden lg:inline text-sm font-medium text-slate-300 hover:text-white transition-colors">
-              Lønner det seg?
+          <nav className="flex items-center gap-2">
+            <Link href="/lonner-det-seg-a-leie-ut" className="hidden lg:inline text-sm font-semibold text-blue-200 hover:text-white px-3 py-2 rounded-lg transition-all hover:bg-blue-500/10">
+              💡 Lønner det seg?
             </Link>
-            <Link href="/skatt-leieinntekter" className="hidden lg:inline text-sm font-medium text-slate-300 hover:text-white transition-colors">
-              Skatt
+            <Link href="/skatt-leieinntekter" className="hidden lg:inline text-sm font-semibold text-blue-200 hover:text-white px-3 py-2 rounded-lg transition-all hover:bg-blue-500/10">
+              💰 Skatt på utleie
             </Link>
-            <Link href="/egenkapital-utleiebolig" className="hidden lg:inline text-sm font-medium text-slate-300 hover:text-white transition-colors">
-              Egenkapital
+            <Link href="/egenkapital-utleiebolig" className="hidden lg:inline text-sm font-semibold text-blue-200 hover:text-white px-3 py-2 rounded-lg transition-all hover:bg-blue-500/10">
+              🏦 Egenkapitalkrav
             </Link>
             <Link href="/rapport"
-              className="flex items-center gap-2 text-sm font-semibold text-white px-4 py-2 rounded-lg transition-all hover:bg-blue-500"
+              className="flex items-center gap-2 text-sm font-semibold text-white px-4 py-2 rounded-lg transition-all hover:bg-blue-500 ml-2"
               style={{ background: '#2563eb' }}>
               📄 Analyser salgsoppgave
             </Link>
@@ -267,7 +267,7 @@ export default function Home() {
         </div>
       </header>
 
-      <div className="max-w-6xl mx-auto px-4 py-8">
+      <div className="max-w-6xl mx-auto px-5 sm:px-4 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_390px] gap-6 items-start">
 
           {/* ── LEFT: INPUTS ── */}
