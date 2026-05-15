@@ -48,10 +48,22 @@ export async function POST(request: Request) {
   const text = body.text?.trim();
   if (!text) return Response.json({ error: 'Ingen tekst å analysere' }, { status: 400 });
 
-  // Find the tilstandsrapport section instead of blindly sending the whole text
-  const tgIndex = text.search(/tilstandsgrad|TILSTANDSGRAD|TG\s*[123]\b/i);
-  const relevant = tgIndex > 500
-    ? text.slice(Math.max(0, tgIndex - 500), tgIndex + 12_000)
+  // Find the actual tilstandsrapport section (not marketing text)
+  // Look for section headers specific to condition reports
+  const sectionPatterns = [
+    /tilstandsanalyse/i,
+    /tilstandsrapport/i,
+    /\bTG\s*3\b/,   // TG3 is almost certainly in the report section
+    /tilstandsgrad\s*3/i,
+    /tilstandsgrad\s*2/i,
+  ];
+  let bestIndex = -1;
+  for (const pattern of sectionPatterns) {
+    const idx = text.search(pattern);
+    if (idx > 200) { bestIndex = idx; break; }
+  }
+  const relevant = bestIndex > 200
+    ? text.slice(Math.max(0, bestIndex - 300), bestIndex + 12_000)
     : text.slice(0, 12_000);
   const truncated = relevant;
 
