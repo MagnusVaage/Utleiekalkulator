@@ -259,9 +259,9 @@ export default function Home() {
               🏦 Egenkapitalkrav
             </Link>
             <Link href="/rapport"
-              className="flex items-center gap-2 text-sm font-semibold text-white px-4 py-2 rounded-lg transition-all hover:bg-blue-500 ml-2"
+              className="flex items-center gap-2 text-sm font-semibold text-white px-3 sm:px-4 py-2 rounded-lg transition-all hover:bg-blue-500 ml-2 whitespace-nowrap"
               style={{ background: '#2563eb' }}>
-              📄 Analyser salgsoppgave
+              📄 <span className="hidden sm:inline">Analyser salgsoppgave</span><span className="sm:hidden">Analyser</span>
             </Link>
           </nav>
         </div>
@@ -343,7 +343,7 @@ export default function Home() {
                 <h2 className="font-semibold text-white">Utgifter</h2>
                 <span className="text-xs text-slate-500">Standard + egendefinerte</span>
               </div>
-              <div className="grid grid-cols-4 gap-3 mb-5">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
                 <Field label="Kommunale avg. (år)">
                   <NumInput value={form.kommunale} onChange={setF('kommunale')} placeholder="" />
                 </Field>
