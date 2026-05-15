@@ -248,14 +248,12 @@ export default function Home() {
             <img src="/logo.svg" alt="Utleiekalkulator logo" className="w-9 h-9" />
             <span className="font-extrabold text-lg bg-gradient-to-r from-white to-blue-400 bg-clip-text text-transparent tracking-tight">Utleiekalkulator</span>
           </div>
-          <div className="flex items-center gap-4">
+          <nav className="flex items-center gap-6">
             <Link href="/rapport"
-              className="hidden md:flex items-center gap-1.5 text-xs text-slate-400 hover:text-white transition-colors px-3 py-1.5 rounded-lg"
-              style={{ border: '1px solid rgba(255,255,255,0.1)' }}>
-              📄 Tilstandsrapport
+              className="text-sm font-medium text-slate-300 hover:text-white transition-colors">
+              Tilstandsrapport
             </Link>
-            <span className="hidden md:block text-xs text-slate-600">Gratis · Ingen registrering</span>
-          </div>
+          </nav>
         </div>
       </header>
 
