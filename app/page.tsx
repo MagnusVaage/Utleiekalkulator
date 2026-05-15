@@ -248,7 +248,16 @@ export default function Home() {
             <img src="/logo.svg" alt="Utleiekalkulator logo" className="w-9 h-9" />
             <span className="font-extrabold text-lg bg-gradient-to-r from-white to-blue-400 bg-clip-text text-transparent tracking-tight">Utleiekalkulator</span>
           </div>
-          <nav className="flex items-center gap-6">
+          <nav className="flex items-center gap-5">
+            <Link href="/lonner-det-seg-a-leie-ut" className="hidden lg:inline text-sm font-medium text-slate-300 hover:text-white transition-colors">
+              Lønner det seg?
+            </Link>
+            <Link href="/skatt-leieinntekter" className="hidden lg:inline text-sm font-medium text-slate-300 hover:text-white transition-colors">
+              Skatt
+            </Link>
+            <Link href="/egenkapital-utleiebolig" className="hidden lg:inline text-sm font-medium text-slate-300 hover:text-white transition-colors">
+              Egenkapital
+            </Link>
             <Link href="/rapport"
               className="flex items-center gap-2 text-sm font-semibold text-white px-4 py-2 rounded-lg transition-all hover:bg-blue-500"
               style={{ background: '#2563eb' }}>
@@ -520,7 +529,18 @@ export default function Home() {
                   </p>
                   <p className="text-xs text-slate-500 mt-1">Netto (etter alle utgifter)</p>
                 </div>
+                {/* Breakdown — slik blir kontantstrømmen */}
+                <div className="mb-5">
+                  <p className="text-xs text-slate-500 uppercase tracking-wider mb-2">Slik blir kontantstrømmen (pr. mnd)</p>
+                  <SRow label="+ Leieinntekt" value={`${fmt(calc.effectiveRent)} kr`} color="text-emerald-400" />
+                  <SRow label="− Driftskostnader" value={`−${fmt(calc.operatingCosts)} kr`} color="text-red-400" />
+                  <SRow label="− Renter" value={`−${fmt(calc.monthlyInterest)} kr`} color="text-red-400" />
+                  <SRow label="− Avdrag" value={`−${fmt(calc.monthlyPrincipal)} kr`} color="text-red-400" />
+                  <SRow label="− Skatt (22 %)" value={`−${fmt(calc.monthlyTax)} kr`} color="text-red-400" />
+                </div>
+
                 <div>
+                  <p className="text-xs text-slate-500 uppercase tracking-wider mb-2">Nøkkeltall</p>
                   <SRow label="Årlig kontantstrøm"
                     value={`${calc.arligNettofortjeneste >= 0 ? '+' : ''}${fmt(calc.arligNettofortjeneste)} kr`}
                     color={calc.arligNettofortjeneste >= 0 ? 'text-emerald-400' : 'text-red-400'} />
