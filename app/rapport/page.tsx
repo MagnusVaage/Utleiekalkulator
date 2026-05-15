@@ -129,10 +129,10 @@ export default function RapportPage() {
         {/* Hero */}
         <div className="text-center mb-10">
           <h1 className="text-3xl font-extrabold text-white mb-3">
-            Analyser din <span className="text-blue-400">tilstandsrapport</span>
+            Analyser <span className="text-blue-400">salgsoppgaven</span>
           </h1>
           <p className="text-slate-400 text-sm max-w-lg mx-auto">
-            Last opp PDF fra boligsalgsrapporten — AI-en leser gjennom og gir deg en ryddig oversikt over TG1, TG2 og TG3 funn.
+            Last opp PDF-en du lastet ned fra Finn.no — AI-en leser gjennom og gir deg en ryddig oversikt over TG1, TG2 og TG3 funn fra tilstandsrapporten.
           </p>
         </div>
 
