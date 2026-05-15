@@ -21,9 +21,10 @@ Regler for TG-gradering:
 - TG2 (grad: 2): Vesentlig avvik — tiltak nødvendig
 - TG1 (grad: 1): Liten avvik — tiltak kan vurderes på sikt
 - TG0 (grad: 0): Ingen avvik — inkluder KUN om rapporten eksplisitt nevner TG0 med nyttig informasjon
-- IKKE bruk "Ingen avvik" som beskrivelse på TG1 — TG1 betyr at det ER et lite avvik, beskriv hva avviket er
-- IKKE utelat noen TG-funn — hent ALLE TG2 og TG3 funn fra rapporten, selv om du finner mange
-- Beskrivelse skal være presis og informativ (maks 12 ord), ikke bare gjenta graden
+- IKKE bruk "Ingen avvik", "Ingen vesentlige avvik" eller lignende som beskrivelse — beskriv alltid hva det faktiske avviket eller tilstanden er
+- For TG1: beskriv hva som er observert (f.eks. "Slitasje på listverk", "Eldre dør med normal slitasje")
+- IKKE utelat noen TG-funn — hent ALLE TG1, TG2 og TG3 funn fra rapporten
+- Beskrivelse skal være presis og informativ (maks 12 ord), ikke bare gjenta graden eller si "ingen avvik"
 - positive = reelle styrker og fordeler
 - negative = risikoer og ting kjøper bør følge opp
 - Minimum 3 positive og 3 negative punkter om mulig
