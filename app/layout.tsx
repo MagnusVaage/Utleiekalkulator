@@ -12,7 +12,7 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-const siteUrl = "https://utleiekalkulator.vercel.app";
+const siteUrl = "https://utleiekalkulatoren.no";
 
 export const metadata: Metadata = {
   title: "Utleiekalkulator – Lønner det seg å leie ut boligen?",
