@@ -536,6 +536,26 @@ export default function Home() {
         </div>
       </div>
 
+      {/* Guider */}
+      <section className="px-6 py-16 max-w-5xl mx-auto">
+        <h2 className="text-2xl font-bold text-white mb-2 text-center">Guider for utleieinvestorer</h2>
+        <p className="text-slate-400 text-sm text-center mb-8">Det viktigste du må vite før du kjøper utleiebolig</p>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {[
+            { href: '/lonner-det-seg-a-leie-ut', tag: 'Lønnsomhet', title: 'Lønner det seg å leie ut bolig?', desc: 'Yield, kontantstrøm og når utleie faktisk gir penger i lommen.' },
+            { href: '/skatt-leieinntekter',     tag: 'Skatt',      title: 'Skatt på leieinntekter', desc: 'Skattefri utleie, 22 %-regelen og rentefradraget forklart.' },
+            { href: '/egenkapital-utleiebolig', tag: 'Finansiering', title: 'Hvor mye egenkapital trenger du?', desc: '40 %-regelen, omkostninger og hvordan komme rundt kravet.' },
+          ].map(g => (
+            <Link key={g.href} href={g.href} className="rounded-2xl p-6 transition-all hover:bg-white/5 flex flex-col" style={cardStyle}>
+              <p className="text-blue-400 text-xs font-semibold uppercase tracking-wider mb-3">{g.tag}</p>
+              <h3 className="font-bold text-white text-lg mb-2 leading-snug">{g.title}</h3>
+              <p className="text-sm text-slate-400 leading-relaxed flex-1">{g.desc}</p>
+              <p className="text-sm text-blue-400 font-semibold mt-4">Les mer →</p>
+            </Link>
+          ))}
+        </div>
+      </section>
+
       {/* FAQ */}
       <section className="px-6 py-16 max-w-3xl mx-auto">
         <h2 className="text-2xl font-bold text-white mb-8 text-center">Vanlige spørsmål om utleiebolig</h2>
