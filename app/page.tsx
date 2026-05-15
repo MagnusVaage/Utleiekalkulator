@@ -250,8 +250,9 @@ export default function Home() {
           </div>
           <nav className="flex items-center gap-6">
             <Link href="/rapport"
-              className="text-sm font-medium text-slate-300 hover:text-white transition-colors">
-              Tilstandsrapport
+              className="flex items-center gap-2 text-sm font-semibold text-white px-4 py-2 rounded-lg transition-all hover:bg-blue-500"
+              style={{ background: '#2563eb' }}>
+              📄 Analyser tilstandsrapport
             </Link>
           </nav>
         </div>
