@@ -16,8 +16,13 @@ Analyser denne rapporten og returner KUN gyldig JSON (ingen annen tekst, ingen m
   "negative": ["TG3 på tak bør utbedres umiddelbart", "Eldre røranlegg med usikker restlevetid"]
 }
 
-Regler:
-- Inkluder ALLE TG-funn fra rapporten (TG0, TG1, TG2 og TG3)
+Regler for TG-gradering:
+- TG3 (grad: 3): Alvorlig avvik — tiltak nødvendig snarest
+- TG2 (grad: 2): Vesentlig avvik — tiltak nødvendig
+- TG1 (grad: 1): Liten avvik — tiltak kan vurderes
+- TG0 (grad: 0): Ingen avvik — inkluder KUN om rapporten eksplisitt nevner TG0 med nyttig informasjon
+- Inkluder IKKE elementer der du er usikker på graden — er det TG1 i rapporten, bruk grad 1, ikke 0
+- Inkluder IKKE TG0-elementer med beskrivelse "Ingen TG-merking" eller lignende — utelat dem
 - Beskrivelse skal være presis og kort (maks 12 ord)
 - positive = reelle styrker og fordeler
 - negative = risikoer og ting kjøper bør følge opp
