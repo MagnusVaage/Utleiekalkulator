@@ -245,10 +245,8 @@ export default function Home() {
         style={{ background: 'rgba(13,27,46,0.95)', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center shadow">
-              <span className="text-white font-bold text-sm">UK</span>
-            </div>
-            <span className="font-bold text-white text-lg">Utleiekalkulator</span>
+            <img src="/logo.svg" alt="Utleiekalkulator logo" className="w-9 h-9" />
+            <span className="font-extrabold text-lg bg-gradient-to-r from-white to-blue-400 bg-clip-text text-transparent tracking-tight">Utleiekalkulator</span>
           </div>
           <div className="flex items-center gap-4">
             <Link href="/rapport"

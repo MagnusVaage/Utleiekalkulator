@@ -116,9 +116,7 @@ export default function RapportPage() {
             </Link>
             <span className="text-slate-700">|</span>
             <div className="flex items-center gap-2">
-              <div className="w-7 h-7 bg-blue-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-xs">TR</span>
-              </div>
+              <img src="/logo.svg" alt="Utleiekalkulator logo" className="w-7 h-7" />
               <span className="font-semibold text-white text-sm">Tilstandsrapport-analyse</span>
             </div>
           </div>

@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 36" fill="none">
+  <!-- Background -->
+  <rect width="36" height="36" rx="9" fill="#2563eb"/>
+  <!-- House body -->
+  <path d="M18 7L30 17V30H6V17L18 7Z" fill="rgba(255,255,255,0.12)" stroke="white" stroke-width="1.6" stroke-linejoin="round"/>
+  <!-- Trend line (upward chart inside house) -->
+  <polyline points="10,26 14,21 18,23 25,15" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Arrow head -->
+  <polyline points="21.5,14 25,15 23.8,18.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
