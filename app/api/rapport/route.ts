@@ -48,24 +48,24 @@ export async function POST(request: Request) {
   const text = body.text?.trim();
   if (!text) return Response.json({ error: 'Ingen tekst å analysere' }, { status: 400 });
 
-  // Find the actual tilstandsrapport section (not marketing text)
-  // Look for section headers specific to condition reports
-  const sectionPatterns = [
-    /tilstandsanalyse/i,
-    /tilstandsrapport/i,
-    /\bTG\s*3\b/,   // TG3 is almost certainly in the report section
-    /tilstandsgrad\s*3/i,
-    /tilstandsgrad\s*2/i,
-  ];
-  let bestIndex = -1;
-  for (const pattern of sectionPatterns) {
-    const idx = text.search(pattern);
-    if (idx > 200) { bestIndex = idx; break; }
+  // Extract context around every TG mention in the document
+  const tgRegex = /\bTG\s*[0-3]\b/g;
+  let match;
+  const seen = new Set<number>();
+  const snippets: string[] = [];
+  while ((match = tgRegex.exec(text)) !== null) {
+    // Deduplicate nearby matches (within 200 chars)
+    const bucket = Math.floor(match.index / 200);
+    if (seen.has(bucket)) continue;
+    seen.add(bucket);
+    const start = Math.max(0, match.index - 150);
+    const end = Math.min(text.length, match.index + 400);
+    snippets.push(text.slice(start, end));
+    if (snippets.join('\n').length > 10_000) break;
   }
-  const relevant = bestIndex > 200
-    ? text.slice(Math.max(0, bestIndex - 300), bestIndex + 12_000)
-    : text.slice(0, 12_000);
-  const truncated = relevant;
+  const truncated = snippets.length > 3
+    ? snippets.join('\n---\n')
+    : text.slice(0, 10_000);
 
   try {
     const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
