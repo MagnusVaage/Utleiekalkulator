@@ -246,8 +246,8 @@ export default function Home() {
       {/* Header */}
       <header className="px-4 sm:px-6 py-3 sm:py-4 sticky top-0 z-20 backdrop-blur"
         style={{ background: 'rgba(13,27,46,0.95)', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-        <div className="max-w-6xl mx-auto flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2 sm:gap-3 shrink-0 relative">
+        <div className="max-w-6xl mx-auto grid grid-cols-[auto_1fr_auto] items-center gap-2">
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0 relative justify-self-start">
             <button onClick={() => setMenuOpen(v => !v)} aria-label="Meny" aria-expanded={menuOpen}
               className="p-2 rounded-lg text-slate-300 hover:text-white hover:bg-white/5 transition-colors"
               style={{ border: '1px solid rgba(255,255,255,0.08)' }}>
@@ -291,17 +291,18 @@ export default function Home() {
               </>
             )}
           </div>
-          <nav className="flex items-center gap-1 sm:gap-2">
+          <nav className="flex items-center justify-center gap-1 sm:gap-2 justify-self-center">
             <Link href="/mine-boliger" className="text-xs sm:text-sm font-semibold text-violet-200 hover:text-white px-2 sm:px-3 py-2 rounded-lg transition-all whitespace-nowrap"
               style={{ background: 'rgba(167,139,250,0.10)', border: '1px solid rgba(167,139,250,0.25)' }}>
               <span className="sm:hidden">Mine</span><span className="hidden sm:inline">Mine boliger</span>
             </Link>
             <Link href="/rapport"
-              className="text-xs sm:text-sm font-semibold text-white px-2.5 sm:px-4 py-2 rounded-lg transition-all hover:bg-blue-500 ml-1 sm:ml-2 whitespace-nowrap"
+              className="text-xs sm:text-sm font-semibold text-white px-2.5 sm:px-4 py-2 rounded-lg transition-all hover:bg-blue-500 whitespace-nowrap"
               style={{ background: '#2563eb' }}>
-              Analyser salgsoppgave
+              <span className="sm:hidden">Salgsoppgave</span><span className="hidden sm:inline">Analyser salgsoppgave</span>
             </Link>
           </nav>
+          <div className="justify-self-end" aria-hidden />
         </div>
       </header>
 
