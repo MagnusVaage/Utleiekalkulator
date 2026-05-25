@@ -104,6 +104,7 @@ function MetricBox({ label, value, color }: { label: string; value: string; colo
 // ─── Main component ──────────────────────────────────────────────────────────
 
 export default function Home() {
+  const [menuOpen, setMenuOpen] = useState(false);
   const [url, setUrl] = useState('');
   const [fetching, setFetching] = useState(false);
   const [fetchMsg, setFetchMsg] = useState('');
@@ -243,26 +244,54 @@ export default function Home() {
     <div className="min-h-screen" style={{ background: '#0d1b2e' }}>
 
       {/* Header */}
-      <header className="px-4 sm:px-6 py-3 sm:py-4 sticky top-0 z-10 backdrop-blur"
+      <header className="px-4 sm:px-6 py-3 sm:py-4 sticky top-0 z-20 backdrop-blur"
         style={{ background: 'rgba(13,27,46,0.95)', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
         <div className="max-w-6xl mx-auto flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0 relative">
+            <button onClick={() => setMenuOpen(v => !v)} aria-label="Meny" aria-expanded={menuOpen}
+              className="p-2 rounded-lg text-slate-300 hover:text-white hover:bg-white/5 transition-colors"
+              style={{ border: '1px solid rgba(255,255,255,0.08)' }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+                <line x1="4" y1="7" x2="20" y2="7" />
+                <line x1="4" y1="12" x2="20" y2="12" />
+                <line x1="4" y1="17" x2="20" y2="17" />
+              </svg>
+            </button>
             <img src="/logo.svg" alt="Utleiekalkulator logo" className="w-8 h-8 sm:w-9 sm:h-9" />
             <span className="hidden sm:inline font-extrabold text-lg bg-gradient-to-r from-white to-blue-400 bg-clip-text text-transparent tracking-tight">Utleiekalkulator</span>
+
+            {menuOpen && (
+              <>
+                <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(false)} />
+                <div className="absolute left-0 top-full mt-2 w-64 rounded-xl p-2 z-20 shadow-2xl"
+                  style={{ background: '#0d1b2e', border: '1px solid rgba(255,255,255,0.10)' }}>
+                  <p className="text-xs text-slate-500 uppercase tracking-wider px-3 py-2">Guider</p>
+                  <Link href="/lonner-det-seg-a-leie-ut" onClick={() => setMenuOpen(false)}
+                    className="block px-3 py-2 rounded-lg text-sm font-medium text-amber-200 hover:bg-amber-500/10 transition-colors">
+                    Lønner det seg å leie ut?
+                  </Link>
+                  <Link href="/skatt-leieinntekter" onClick={() => setMenuOpen(false)}
+                    className="block px-3 py-2 rounded-lg text-sm font-medium text-emerald-200 hover:bg-emerald-500/10 transition-colors">
+                    Skatt på utleie
+                  </Link>
+                  <Link href="/egenkapital-utleiebolig" onClick={() => setMenuOpen(false)}
+                    className="block px-3 py-2 rounded-lg text-sm font-medium text-sky-200 hover:bg-sky-500/10 transition-colors">
+                    Egenkapitalkrav
+                  </Link>
+                  <div className="h-px my-2" style={{ background: 'rgba(255,255,255,0.08)' }} />
+                  <Link href="/slik-beregnes-det" onClick={() => setMenuOpen(false)}
+                    className="block px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:bg-white/5 transition-colors">
+                    Slik beregnes det
+                  </Link>
+                  <Link href="/personvern" onClick={() => setMenuOpen(false)}
+                    className="block px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:bg-white/5 transition-colors">
+                    Personvern
+                  </Link>
+                </div>
+              </>
+            )}
           </div>
           <nav className="flex items-center gap-1 sm:gap-2">
-            <Link href="/lonner-det-seg-a-leie-ut" className="text-xs sm:text-sm font-semibold text-amber-200 hover:text-white px-2 sm:px-3 py-2 rounded-lg transition-all whitespace-nowrap"
-              style={{ background: 'rgba(245,158,11,0.10)', border: '1px solid rgba(245,158,11,0.25)' }}>
-              <span className="sm:hidden">Lønnsomhet</span><span className="hidden sm:inline">Lønner det seg?</span>
-            </Link>
-            <Link href="/skatt-leieinntekter" className="text-xs sm:text-sm font-semibold text-emerald-200 hover:text-white px-2 sm:px-3 py-2 rounded-lg transition-all whitespace-nowrap"
-              style={{ background: 'rgba(16,185,129,0.10)', border: '1px solid rgba(16,185,129,0.25)' }}>
-              <span className="sm:hidden">Skatt</span><span className="hidden sm:inline">Skatt på utleie</span>
-            </Link>
-            <Link href="/egenkapital-utleiebolig" className="text-xs sm:text-sm font-semibold text-sky-200 hover:text-white px-2 sm:px-3 py-2 rounded-lg transition-all whitespace-nowrap"
-              style={{ background: 'rgba(56,189,248,0.10)', border: '1px solid rgba(56,189,248,0.25)' }}>
-              <span className="sm:hidden">EK</span><span className="hidden sm:inline">Egenkapitalkrav</span>
-            </Link>
             <Link href="/mine-boliger" className="text-xs sm:text-sm font-semibold text-violet-200 hover:text-white px-2 sm:px-3 py-2 rounded-lg transition-all whitespace-nowrap"
               style={{ background: 'rgba(167,139,250,0.10)', border: '1px solid rgba(167,139,250,0.25)' }}>
               <span className="sm:hidden">Mine</span><span className="hidden sm:inline">Mine boliger</span>
