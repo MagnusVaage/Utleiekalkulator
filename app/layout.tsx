@@ -15,10 +15,6 @@ const geistMono = Geist_Mono({
 const siteUrl = "https://utleiekalkulatoren.no";
 
 export const metadata: Metadata = {
-  icons: {
-    icon: "/favicon.ico",
-    apple: "/apple-touch-icon.png",
-  },
   title: "Utleiekalkulator – Lønner det seg å leie ut boligen?",
   description:
     "Regn ut yield, kontantstrøm og rentefradrag på utleiebolig på sekunder. Lim inn en Finn.no-lenke eller fyll inn tallene selv. Gratis, ingen registrering.",
