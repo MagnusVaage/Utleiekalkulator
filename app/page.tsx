@@ -267,7 +267,23 @@ export default function Home() {
         </div>
       </header>
 
-      <div className="max-w-6xl mx-auto px-5 sm:px-4 py-8">
+      {/* Hero */}
+      <section className="px-5 sm:px-6 pt-10 pb-6 max-w-5xl mx-auto text-center">
+        <h1 className="text-3xl sm:text-5xl font-black tracking-tight bg-gradient-to-br from-white to-blue-300 bg-clip-text text-transparent leading-tight">
+          Se om utleieboligen går i pluss — på 30 sekunder
+        </h1>
+        <p className="mt-4 text-base sm:text-lg text-slate-300 max-w-2xl mx-auto leading-relaxed">
+          Regn ut yield, kontantstrøm, lån og skatt for utleiebolig. Lim inn en Finn-lenke eller fyll inn tallene selv.
+        </p>
+        <div className="mt-5 flex flex-wrap justify-center gap-2 text-xs text-slate-400">
+          <span className="px-3 py-1.5 rounded-full" style={cardStyle}>✓ Gratis</span>
+          <span className="px-3 py-1.5 rounded-full" style={cardStyle}>✓ Ingen registrering</span>
+          <span className="px-3 py-1.5 rounded-full" style={cardStyle}>✓ Norske skatteregler 2026</span>
+          <span className="px-3 py-1.5 rounded-full" style={cardStyle}>✓ Finn.no-import</span>
+        </div>
+      </section>
+
+      <div className="max-w-6xl mx-auto px-5 sm:px-4 pt-2 pb-8">
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_390px] gap-6 items-start">
 
           {/* ── LEFT: INPUTS ── */}
@@ -331,7 +347,7 @@ export default function Home() {
                 <Field label="Egenkapital (beløp)" hint="Beregnes fra kjøpssum × %">
                   <TInput value={calc ? `${fmt(calc.equity)} kr` : ''} placeholder="750 000 kr" readOnly />
                 </Field>
-                <Field label="Fellesgjeld">
+                <Field label="Fellesgjeld" hint="Andel av borettslag/sameie sin gjeld">
                   <NumInput value={form.gjeld} onChange={setF('gjeld')} placeholder="0" />
                 </Field>
               </div>
@@ -344,13 +360,13 @@ export default function Home() {
                 <span className="text-xs text-slate-500">Standard + egendefinerte</span>
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
-                <Field label="Kommunale avg. (år)">
+                <Field label="Kommunale avg. (år)" hint="Vann, avløp, renovasjon">
                   <NumInput value={form.kommunale} onChange={setF('kommunale')} placeholder="" />
                 </Field>
-                <Field label="Eiendomsskatt (år)">
+                <Field label="Eiendomsskatt (år)" hint="Kun i enkelte kommuner">
                   <NumInput value={form.eiendomsskatt} onChange={setF('eiendomsskatt')} placeholder="" />
                 </Field>
-                <Field label="Vedlikehold (år)">
+                <Field label="Vedlikehold (år)" hint="Tommelregel: ~1 % av boligverdi">
                   <NumInput value={form.vedlikeholdKr} onChange={setF('vedlikeholdKr')} placeholder="" />
                 </Field>
                 <Field label="Felleskostn. (mnd)">
@@ -507,14 +523,68 @@ export default function Home() {
               </Card>
             )}
 
+            {/* Rentestress-test */}
+            {calc && (() => {
+              const baseRate = parseFloat(form.nominellRente) || 4.80;
+              const scenarios = [-1, 0, 1, 2].map(delta => {
+                const r = Math.max(0, baseRate + delta);
+                const pmt = avdragsfrihet
+                  ? Math.round(calc.loan * r / 100 / 12)
+                  : form.laanetype === 'serie'
+                    ? Math.round(calc.loan / (parseInt(form.termYears) * 12)) + Math.round(calc.loan * r / 100 / 12)
+                    : calcAnnuitet(calc.loan, r, parseInt(form.termYears) || 25);
+                const monthlyInt = Math.round(calc.loan * r / 100 / 12);
+                const taxable = Math.max(0, calc.effectiveRent - calc.operatingCosts - monthlyInt);
+                const monthlyTax = Math.round(taxable * 0.22);
+                const cf = calc.effectiveRent - calc.operatingCosts - pmt - monthlyTax;
+                return { rate: r, cf, delta };
+              });
+              return (
+                <Card>
+                  <div className="flex justify-between items-center mb-1">
+                    <h3 className="font-semibold text-white">Rentestress-test</h3>
+                    <span className="text-xs text-slate-500">Hva tåler du?</span>
+                  </div>
+                  <p className="text-xs text-slate-500 mb-4">Månedlig kontantstrøm ved endret rente</p>
+                  <div className="grid grid-cols-4 gap-3">
+                    {scenarios.map(s => (
+                      <div key={s.delta} className="flex flex-col gap-1 p-3 rounded-xl text-center"
+                        style={{ background: s.delta === 0 ? 'rgba(59,130,246,0.12)' : 'rgba(0,0,0,0.2)', border: s.delta === 0 ? '1px solid rgba(59,130,246,0.35)' : '1px solid rgba(255,255,255,0.06)' }}>
+                        <span className="text-xs text-slate-400">{s.delta === 0 ? 'I dag' : `${s.delta > 0 ? '+' : ''}${s.delta} %`}</span>
+                        <span className="text-sm font-bold text-white">{s.rate.toFixed(2).replace('.', ',')} %</span>
+                        <span className={`text-sm font-bold ${s.cf >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                          {s.cf >= 0 ? '+' : ''}{fmt(s.cf)} kr
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+              );
+            })()}
+
           </div>
 
           {/* ── RIGHT: RESULTS (sticky) ── */}
           <div className="lg:sticky lg:top-24 flex flex-col gap-4">
             {!calc ? (
-              <Card className="text-center py-12">
-                <div className="text-5xl mb-4">🏠</div>
-                <p className="text-slate-400 text-sm leading-relaxed">Fyll inn kjøpssum<br />for å se analysen</p>
+              <Card>
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="font-semibold text-white">Eksempel</h3>
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-300 font-medium">Demo</span>
+                </div>
+                <p className="text-xs text-slate-500 mb-4">Oslo, 55 m², 2-roms, 4 mill. kr, 15 % EK</p>
+                <div className="text-center mb-5 p-4 rounded-xl" style={{ background: 'rgba(0,0,0,0.2)' }}>
+                  <p className="text-xs text-slate-400 mb-1 uppercase tracking-wider">Månedlig kontantstrøm</p>
+                  <p className="text-4xl font-black text-red-400">−2 850 kr</p>
+                  <p className="text-xs text-slate-500 mt-1">Netto (etter alle utgifter)</p>
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500 uppercase tracking-wider mb-2">Nøkkeltall</p>
+                  <SRow label="Yield (netto)" value="4,1 %" />
+                  <SRow label="ROI (netto)" value="3,2 %" color="text-emerald-400" />
+                  <SRow label="Årlig kontantstrøm" value="−34 200 kr" color="text-red-400" />
+                </div>
+                <p className="text-xs text-slate-500 mt-5 text-center">↑ Fyll inn kjøpssum for å regne ditt eget case</p>
               </Card>
             ) : (
               <Card>
@@ -597,6 +667,13 @@ export default function Home() {
 
       {/* Footer */}
       <footer className="px-6 py-8 text-center" style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+        <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 text-xs text-slate-500 mb-3">
+          <Link href="/slik-beregnes-det" className="hover:text-blue-300 transition-colors">Slik beregnes det</Link>
+          <Link href="/personvern" className="hover:text-blue-300 transition-colors">Personvern</Link>
+          <Link href="/lonner-det-seg-a-leie-ut" className="hover:text-blue-300 transition-colors">Lønnsomhet</Link>
+          <Link href="/skatt-leieinntekter" className="hover:text-blue-300 transition-colors">Skatt</Link>
+          <Link href="/egenkapital-utleiebolig" className="hover:text-blue-300 transition-colors">Egenkapital</Link>
+        </div>
         <p className="text-xs text-slate-600">
           © {new Date().getFullYear()} Utleiekalkulator · Leiepriser fra hybel.no · Ikke finansiell rådgivning
         </p>
