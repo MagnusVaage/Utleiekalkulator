@@ -633,7 +633,7 @@ export default function Home() {
                 </div>
                 <div className="text-center mb-5 p-4 rounded-xl" style={{ background: 'rgba(0,0,0,0.2)' }}>
                   <p className="text-xs text-slate-400 mb-1 uppercase tracking-wider">Månedlig kontantstrøm</p>
-                  <p className={`text-4xl font-black ${isPos ? 'text-emerald-400' : 'text-red-400'}`}>
+                  <p className={`text-2xl sm:text-3xl font-black break-words ${isPos ? 'text-emerald-400' : 'text-red-400'}`}>
                     {isPos ? '+' : ''}{fmt(calc.afterTaxCF)} kr
                   </p>
                   <p className="text-xs text-slate-500 mt-1">Netto (etter alle utgifter)</p>
@@ -686,7 +686,7 @@ export default function Home() {
                     }}
                     className="w-full py-2.5 rounded-xl text-sm font-semibold text-white transition-all hover:opacity-90"
                     style={{ background: '#2563eb' }}>
-                    Lagre beregning
+                    Lagre til Mine boliger
                   </button>
                   {saveMsg && <p className="text-emerald-400 text-xs text-center font-medium">{saveMsg} — <Link href="/mine-boliger" className="underline">se mine boliger</Link></p>}
                   <Link href="/mine-boliger" className="text-center text-xs text-slate-400 hover:text-blue-300 transition-colors">
