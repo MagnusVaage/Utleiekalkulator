@@ -49,14 +49,16 @@ export default function Page() {
             <span className="hidden sm:inline font-extrabold text-lg bg-gradient-to-r from-white to-blue-400 bg-clip-text text-transparent tracking-tight">Utleiekalkulator</span>
           </Link>
           <nav className="flex items-center gap-1 sm:gap-2">
-            <Link href="/lonner-det-seg-a-leie-ut" aria-label="Lønner det seg?" className="text-base sm:text-sm font-semibold text-blue-200 hover:text-white px-2 sm:px-3 py-2 rounded-lg transition-all hover:bg-blue-500/10 whitespace-nowrap">
-              💡<span className="hidden lg:inline ml-1">Lønner det seg?</span>
+            <Link href="/lonner-det-seg-a-leie-ut" className="text-xs sm:text-sm font-semibold text-amber-200 hover:text-white px-2 sm:px-3 py-2 rounded-lg transition-all whitespace-nowrap"
+              style={{ background: 'rgba(245,158,11,0.10)', border: '1px solid rgba(245,158,11,0.25)' }}>
+              <span className="sm:hidden">Lønnsomhet</span><span className="hidden sm:inline">Lønner det seg?</span>
             </Link>
-            <Link href="/egenkapital-utleiebolig" aria-label="Egenkapitalkrav" className="text-base sm:text-sm font-semibold text-blue-200 hover:text-white px-2 sm:px-3 py-2 rounded-lg transition-all hover:bg-blue-500/10 whitespace-nowrap">
-              🏦<span className="hidden lg:inline ml-1">Egenkapitalkrav</span>
+            <Link href="/egenkapital-utleiebolig" className="text-xs sm:text-sm font-semibold text-sky-200 hover:text-white px-2 sm:px-3 py-2 rounded-lg transition-all whitespace-nowrap"
+              style={{ background: 'rgba(56,189,248,0.10)', border: '1px solid rgba(56,189,248,0.25)' }}>
+              <span className="sm:hidden">EK</span><span className="hidden sm:inline">Egenkapitalkrav</span>
             </Link>
-            <Link href="/" className="flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-white px-2.5 sm:px-4 py-2 rounded-lg transition-all hover:bg-blue-500 ml-1 sm:ml-2 whitespace-nowrap" style={{ background: '#2563eb' }}>
-              🧮 Beregn lønnsomhet
+            <Link href="/" className="text-xs sm:text-sm font-semibold text-white px-2.5 sm:px-4 py-2 rounded-lg transition-all hover:bg-blue-500 ml-1 sm:ml-2 whitespace-nowrap" style={{ background: '#2563eb' }}>
+              Beregn lønnsomhet
             </Link>
           </nav>
         </div>

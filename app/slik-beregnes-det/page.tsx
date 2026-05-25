@@ -43,7 +43,7 @@ export default function Page() {
           </Link>
           <nav className="flex items-center gap-1 sm:gap-2">
             <Link href="/" className="flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-white px-2.5 sm:px-4 py-2 rounded-lg transition-all hover:bg-blue-500 ml-1 sm:ml-2 whitespace-nowrap" style={{ background: '#2563eb' }}>
-              🧮 Tilbake til kalkulator
+              Tilbake til kalkulator
             </Link>
           </nav>
         </div>

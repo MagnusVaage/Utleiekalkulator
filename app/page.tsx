@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
+import { saveProperty, newId } from './lib/savedProperties';
 
 const fmt = (n: number) => new Intl.NumberFormat('nb-NO').format(Math.round(n));
 
@@ -109,6 +110,7 @@ export default function Home() {
   const [fetchErr, setFetchErr] = useState('');
   const [avdragsfrihet, setAvdragsfrihet] = useState(false);
   const [leieTab, setLeieTab] = useState('fast');
+  const [saveMsg, setSaveMsg] = useState('');
 
   const [form, setForm] = useState({
     adresse: '',
@@ -249,19 +251,26 @@ export default function Home() {
             <span className="hidden sm:inline font-extrabold text-lg bg-gradient-to-r from-white to-blue-400 bg-clip-text text-transparent tracking-tight">Utleiekalkulator</span>
           </div>
           <nav className="flex items-center gap-1 sm:gap-2">
-            <Link href="/lonner-det-seg-a-leie-ut" aria-label="Lønner det seg?" className="text-base sm:text-sm font-semibold text-blue-200 hover:text-white px-2 sm:px-3 py-2 rounded-lg transition-all hover:bg-blue-500/10 whitespace-nowrap">
-              💡<span className="hidden lg:inline ml-1">Lønner det seg?</span>
+            <Link href="/lonner-det-seg-a-leie-ut" className="text-xs sm:text-sm font-semibold text-amber-200 hover:text-white px-2 sm:px-3 py-2 rounded-lg transition-all whitespace-nowrap"
+              style={{ background: 'rgba(245,158,11,0.10)', border: '1px solid rgba(245,158,11,0.25)' }}>
+              <span className="sm:hidden">Lønnsomhet</span><span className="hidden sm:inline">Lønner det seg?</span>
             </Link>
-            <Link href="/skatt-leieinntekter" aria-label="Skatt på utleie" className="text-base sm:text-sm font-semibold text-blue-200 hover:text-white px-2 sm:px-3 py-2 rounded-lg transition-all hover:bg-blue-500/10 whitespace-nowrap">
-              💰<span className="hidden lg:inline ml-1">Skatt på utleie</span>
+            <Link href="/skatt-leieinntekter" className="text-xs sm:text-sm font-semibold text-emerald-200 hover:text-white px-2 sm:px-3 py-2 rounded-lg transition-all whitespace-nowrap"
+              style={{ background: 'rgba(16,185,129,0.10)', border: '1px solid rgba(16,185,129,0.25)' }}>
+              <span className="sm:hidden">Skatt</span><span className="hidden sm:inline">Skatt på utleie</span>
             </Link>
-            <Link href="/egenkapital-utleiebolig" aria-label="Egenkapitalkrav" className="text-base sm:text-sm font-semibold text-blue-200 hover:text-white px-2 sm:px-3 py-2 rounded-lg transition-all hover:bg-blue-500/10 whitespace-nowrap">
-              🏦<span className="hidden lg:inline ml-1">Egenkapitalkrav</span>
+            <Link href="/egenkapital-utleiebolig" className="text-xs sm:text-sm font-semibold text-sky-200 hover:text-white px-2 sm:px-3 py-2 rounded-lg transition-all whitespace-nowrap"
+              style={{ background: 'rgba(56,189,248,0.10)', border: '1px solid rgba(56,189,248,0.25)' }}>
+              <span className="sm:hidden">EK</span><span className="hidden sm:inline">Egenkapitalkrav</span>
+            </Link>
+            <Link href="/mine-boliger" className="text-xs sm:text-sm font-semibold text-violet-200 hover:text-white px-2 sm:px-3 py-2 rounded-lg transition-all whitespace-nowrap"
+              style={{ background: 'rgba(167,139,250,0.10)', border: '1px solid rgba(167,139,250,0.25)' }}>
+              <span className="sm:hidden">Mine</span><span className="hidden sm:inline">Mine boliger</span>
             </Link>
             <Link href="/rapport"
-              className="flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-white px-2.5 sm:px-4 py-2 rounded-lg transition-all hover:bg-blue-500 ml-1 sm:ml-2 whitespace-nowrap"
+              className="text-xs sm:text-sm font-semibold text-white px-2.5 sm:px-4 py-2 rounded-lg transition-all hover:bg-blue-500 ml-1 sm:ml-2 whitespace-nowrap"
               style={{ background: '#2563eb' }}>
-              📄 Analyser salgsoppgave
+              Analyser salgsoppgave
             </Link>
           </nav>
         </div>
@@ -302,7 +311,7 @@ export default function Home() {
                       className={inputCls} style={inputStyle} />
                     <button onClick={fetchFromFinn} disabled={fetching || !url.trim()}
                       className="px-4 py-2.5 bg-emerald-600 text-white text-sm font-semibold rounded-xl hover:bg-emerald-500 disabled:opacity-40 transition-all whitespace-nowrap">
-                      {fetching ? '...' : '🔒 Hent fra FINN'}
+                      {fetching ? '...' : 'Hent fra FINN'}
                     </button>
                   </div>
                   {fetchMsg && <p className="mt-1 text-emerald-400 text-xs font-medium">{fetchMsg}</p>}
@@ -572,17 +581,17 @@ export default function Home() {
                   <h3 className="font-semibold text-white">Eksempel</h3>
                   <span className="text-xs px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-300 font-medium">Demo</span>
                 </div>
-                <p className="text-xs text-slate-500 mb-4">Oslo, 55 m², 2-roms, 4 mill. kr, 15 % EK</p>
+                <p className="text-xs text-slate-500 mb-4">Bergen, 60 m², 2-roms, 3,2 mill. kr, 30 % EK</p>
                 <div className="text-center mb-5 p-4 rounded-xl" style={{ background: 'rgba(0,0,0,0.2)' }}>
                   <p className="text-xs text-slate-400 mb-1 uppercase tracking-wider">Månedlig kontantstrøm</p>
-                  <p className="text-4xl font-black text-red-400">−2 850 kr</p>
+                  <p className="text-4xl font-black text-emerald-400">+1 080 kr</p>
                   <p className="text-xs text-slate-500 mt-1">Netto (etter alle utgifter)</p>
                 </div>
                 <div>
                   <p className="text-xs text-slate-500 uppercase tracking-wider mb-2">Nøkkeltall</p>
-                  <SRow label="Yield (netto)" value="4,1 %" />
-                  <SRow label="ROI (netto)" value="3,2 %" color="text-emerald-400" />
-                  <SRow label="Årlig kontantstrøm" value="−34 200 kr" color="text-red-400" />
+                  <SRow label="Yield (netto)" value="4,8 %" />
+                  <SRow label="ROI (netto)" value="7,2 %" color="text-emerald-400" />
+                  <SRow label="Årlig kontantstrøm" value="+12 960 kr" color="text-emerald-400" />
                 </div>
                 <p className="text-xs text-slate-500 mt-5 text-center">↑ Fyll inn kjøpssum for å regne ditt eget case</p>
               </Card>
@@ -618,6 +627,41 @@ export default function Home() {
                   <SRow label="ROI (netto)" value={`${calc.roi} %`}
                     color={calc.roi > 0 ? 'text-emerald-400' : 'text-red-400'} />
                   <SRow label="Utgifter i året" value={`${fmt(calc.operatingCosts * 12)} kr`} />
+                </div>
+                <div className="mt-5 flex flex-col gap-2">
+                  <button
+                    onClick={() => {
+                      const defaultName = form.adresse || `Bolig ${new Date().toLocaleDateString('nb-NO')}`;
+                      const name = window.prompt('Navn på boligen:', defaultName);
+                      if (!name) return;
+                      const price = parseInt(form.prisantydning.replace(/\D/g, '')) || 0;
+                      saveProperty({
+                        id: newId(),
+                        name: name.trim(),
+                        savedAt: Date.now(),
+                        form,
+                        avdragsfrihet,
+                        snapshot: {
+                          price,
+                          afterTaxCF: calc.afterTaxCF,
+                          arligNettofortjeneste: calc.arligNettofortjeneste,
+                          nettoYield: calc.nettoYield,
+                          roi: calc.roi,
+                          equity: calc.equity,
+                          loan: calc.loan,
+                        },
+                      });
+                      setSaveMsg('✓ Lagret');
+                      setTimeout(() => setSaveMsg(''), 2000);
+                    }}
+                    className="w-full py-2.5 rounded-xl text-sm font-semibold text-white transition-all hover:opacity-90"
+                    style={{ background: '#2563eb' }}>
+                    Lagre beregning
+                  </button>
+                  {saveMsg && <p className="text-emerald-400 text-xs text-center font-medium">{saveMsg} — <Link href="/mine-boliger" className="underline">se mine boliger</Link></p>}
+                  <Link href="/mine-boliger" className="text-center text-xs text-slate-400 hover:text-blue-300 transition-colors">
+                    Sammenlign med tidligere lagrede →
+                  </Link>
                 </div>
               </Card>
             )}
