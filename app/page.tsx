@@ -25,7 +25,7 @@ function Field({ label, children, hint }: { label: string; children: React.React
     <div className="flex flex-col gap-1.5">
       <label className="text-xs font-semibold uppercase tracking-wider text-slate-400">{label}</label>
       {children}
-      {hint && <p className="text-xs text-slate-600 mt-0.5">{hint}</p>}
+      {hint && <p className="text-xs text-slate-400 mt-0.5">{hint}</p>}
     </div>
   );
 }
@@ -297,7 +297,7 @@ export default function Home() {
               <span className="sm:hidden">Mine</span><span className="hidden sm:inline">Mine boliger</span>
             </Link>
             <Link href="/rapport"
-              className="text-xs sm:text-sm font-semibold text-white px-2.5 sm:px-4 py-2 rounded-lg transition-all hover:bg-blue-500 whitespace-nowrap"
+              className="text-xs sm:text-sm font-bold text-white px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg transition-all hover:bg-blue-500 whitespace-nowrap shadow-lg shadow-blue-600/20"
               style={{ background: '#2563eb' }}>
               <span className="sm:hidden">Salgsoppgave</span><span className="hidden sm:inline">Analyser salgsoppgave</span>
             </Link>
@@ -340,11 +340,11 @@ export default function Home() {
                       placeholder="https://www.finn.no/realestate/..."
                       className={inputCls} style={inputStyle} />
                     <button onClick={fetchFromFinn} disabled={fetching || !url.trim()}
-                      className="px-4 py-2.5 bg-emerald-600 text-white text-sm font-semibold rounded-xl hover:bg-emerald-500 disabled:opacity-40 transition-all whitespace-nowrap">
+                      className="px-5 py-2.5 bg-blue-600 text-white text-sm font-bold rounded-xl hover:bg-blue-500 disabled:opacity-40 transition-all whitespace-nowrap shadow-lg shadow-blue-600/20">
                       {fetching ? '...' : 'Hent fra FINN'}
                     </button>
                   </div>
-                  {fetchMsg && <p className="mt-1 text-emerald-400 text-xs font-medium">{fetchMsg}</p>}
+                  {fetchMsg && <p className="mt-1 text-emerald-400 text-xs font-medium">✓ {fetchMsg}</p>}
                   {fetchErr && <p className="mt-1 text-red-400 text-xs">{fetchErr}</p>}
                 </Field>
                 <Field label="Adresse">
@@ -479,7 +479,7 @@ export default function Home() {
                         onChange={e => setF('maanederUtleid')(e.target.value)}
                         className="w-full h-2 rounded-full appearance-none cursor-pointer"
                         style={{ background: `linear-gradient(to right,#3b82f6 ${maanederPct}%,rgba(255,255,255,0.1) ${maanederPct}%)` }} />
-                      <div className="flex justify-between text-xs text-slate-600 mt-1"><span>1 mnd</span><span>12 mnd</span></div>
+                      <div className="flex justify-between text-xs text-slate-400 mt-1"><span>1 mnd</span><span>12 mnd</span></div>
                     </div>
                   </div>
                   <div>
@@ -532,7 +532,7 @@ export default function Home() {
                     onChange={e => setF('termYears')(e.target.value)}
                     className="w-full h-2 rounded-full appearance-none cursor-pointer"
                     style={{ background: `linear-gradient(to right,#3b82f6 ${termPct}%,rgba(255,255,255,0.1) ${termPct}%)` }} />
-                  <div className="flex justify-between text-xs text-slate-600 mt-1"><span>5 år</span><span>30 år</span></div>
+                  <div className="flex justify-between text-xs text-slate-400 mt-1"><span>5 år</span><span>30 år</span></div>
                 </div>
                 <label className="flex items-center gap-3 cursor-pointer select-none p-3 rounded-xl" style={{ background: 'rgba(0,0,0,0.2)' }}>
                   <div className="relative inline-block w-10 h-6" onClick={() => setAvdragsfrihet(v => !v)}>
@@ -748,7 +748,7 @@ export default function Home() {
           <Link href="/skatt-leieinntekter" className="hover:text-blue-300 transition-colors">Skatt</Link>
           <Link href="/egenkapital-utleiebolig" className="hover:text-blue-300 transition-colors">Egenkapital</Link>
         </div>
-        <p className="text-xs text-slate-600">
+        <p className="text-xs text-slate-400">
           © {new Date().getFullYear()} Utleiekalkulator · Leiepriser fra hybel.no · Ikke finansiell rådgivning
         </p>
       </footer>
