@@ -7,12 +7,12 @@ Analyser denne rapporten og returner KUN gyldig JSON (ingen annen tekst, ingen m
   "adresse": "boligens adresse eller tom streng om ikke tilgjengelig",
   "sammendrag": "2-3 setninger om boligens generelle tilstand",
   "tg": [
-    {"grad": 3, "kategori": "Tak", "beskrivelse": "Lekkasje oppdaget, krever umiddelbar utbedring"},
-    {"grad": 2, "kategori": "Balkong", "beskrivelse": "Behov for overflatebehandling av rekkverk"},
-    {"grad": 1, "kategori": "Vinduer", "beskrivelse": "Mindre slitasje på listverk"},
-    {"grad": 0, "kategori": "Elektrisk anlegg", "beskrivelse": "Nylig oppgradert el-tavle"}
+    {"grad": 3, "kategori": "Taklekkasje i loftsbod", "tema": "Byggteknisk", "beskrivelse": "Lekkasje oppdaget, krever umiddelbar utbedring", "sporsmal": "Hva vil det koste å utbedre taklekkasjen, og når ble det sist sjekket?"},
+    {"grad": 2, "kategori": "Oppgraderingsbehov i bad", "tema": "Våtrom", "beskrivelse": "Membran fra 2006 nærmer seg forventet levetid", "sporsmal": "Er det planlagt utskifting av membranen på badet, og hva er estimert kostnad?"},
+    {"grad": 1, "kategori": "Slitasje på vinduer", "tema": "Byggteknisk", "beskrivelse": "Mindre slitasje på listverk", "sporsmal": "Når ble vinduene sist vedlikeholdt?"},
+    {"grad": 0, "kategori": "Nylig oppgradert el-anlegg", "tema": "Tekniske installasjoner", "beskrivelse": "Nylig oppgradert el-tavle", "sporsmal": ""}
   ],
-  "positive": ["Nyoppusset kjøkken (2023)", "Solrik sydvestvendt balkong"],
+  "positive": ["Koselig stue med peisovn", "Ny varmtvannsbereder", "Stilrene, nyere vinduer", "Rolig og attraktiv beliggenhet"],
   "negative": ["TG3 på tak bør utbedres umiddelbart", "Eldre røranlegg med usikker restlevetid"]
 }
 
@@ -23,9 +23,14 @@ Regler for TG-gradering:
 - TG0 (grad: 0): Ingen avvik — inkluder KUN om rapporten eksplisitt nevner TG0 med nyttig informasjon
 - IKKE bruk "Ingen avvik", "Ingen vesentlige avvik" eller lignende som beskrivelse — beskriv alltid hva det faktiske avviket eller tilstanden er
 - For TG1: beskriv hva som er observert (f.eks. "Slitasje på listverk", "Eldre dør med normal slitasje")
-- IKKE utelat noen TG-funn — hent ALLE TG1, TG2 og TG3 funn fra rapporten
-- Beskrivelse skal være presis og informativ (maks 12 ord), ikke bare gjenta graden eller si "ingen avvik"
-- positive = reelle styrker og fordeler
+- KRITISK: TG1-funn er like obligatoriske som TG2 og TG3. Tilstandsrapporter inneholder vanligvis FLERE TG1-funn enn TG2/TG3. Du skal ALDRI hoppe over et TG1-funn. Gå systematisk gjennom hele rapporten og ta med HVER ENESTE komponent som er gradert TG1 — også de små og "uvesentlige".
+- IKKE utelat noen TG-funn — hent ALLE TG1, TG2 og TG3 funn fra rapporten. Hvis rapporten har 12 TG1-funn skal du returnere alle 12.
+- Beskrivelse skal være presis og informativ (maks 14 ord), ikke bare gjenta graden eller si "ingen avvik"
+- "kategori" SKAL være en kort, beskrivende frase (3-6 ord) som navngir selve avviket OG hvor/hva det gjelder — IKKE bare ett stikkord. Skriv "Fukt i kjellerrom", ikke "Fukt". Skriv "Mangelfulle rekkverk på trapper", ikke "Trapper". Skriv "Utdatert elektrisk anlegg", ikke "Elektrisk".
+- "tema" SKAL være én av: "Byggteknisk", "Våtrom", "Tekniske installasjoner", "Fukt og råte", "Brann og sikkerhet", "Dokumentasjon", "Utvendig", "Annet"
+- "sporsmal" = ett konkret, presist spørsmål kjøper bør stille megler om akkurat dette funnet (maks 20 ord). Tom streng "" for TG0.
+- For TG2 og TG3 SKAL "sporsmal" alltid fylles ut — det er den viktigste delen
+- positive = reelle styrker og fordeler, hver som en kort beskrivende frase (3-6 ord, f.eks. "Koselig stue med peisovn", "Solrik sydvestvendt balkong") — ikke bare ett ord
 - negative = risikoer og ting kjøper bør følge opp
 - Minimum 3 positive og 3 negative punkter om mulig
 - Svar kun på norsk`;
@@ -62,7 +67,7 @@ export async function POST(request: Request) {
     const start = Math.max(0, match.index - 150);
     const end = Math.min(text.length, match.index + 400);
     snippets.push(text.slice(start, end));
-    if (snippets.join('\n').length > 14_000) break;
+    if (snippets.join('\n').length > 20_000) break;
   }
   const truncated = snippets.length > 3
     ? snippets.join('\n---\n')
@@ -82,7 +87,7 @@ export async function POST(request: Request) {
           { role: 'user', content: `---RAPPORT START---\n${truncated}\n---RAPPORT SLUTT---` },
         ],
         temperature: 0.2,
-        max_tokens: 2048,
+        max_tokens: 8000,
       }),
     });
 

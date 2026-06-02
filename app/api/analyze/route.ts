@@ -74,7 +74,34 @@ function parseFinnHtml(html: string) {
     if (am?.[1]) d.address = am[1];
   }
 
+  // Street + house number + postal code + city (e.g. "Stensgata 35C, 0358 Oslo")
+  if (!d.address) {
+    const am = html.match(/([A-ZÆØÅ][\wæøåÆØÅ.'\- ]{1,40}\s\d{1,4}\s?[A-Z]?,\s*\d{4}\s+[A-ZÆØÅ][\wæøåÆØÅ\- ]{1,30}?)(?=["<\\])/);
+    if (am?.[1]) d.address = am[1].trim().replace(/^(Åpne kart for|Se kart for|Vis kart for)\s+/i, '');
+  }
+
+  tryNum(/(\d{1,2})\.?\s*etasje/i, 'etasje');
+
   return d;
+}
+
+function extractImages(html: string): string[] {
+  const out: string[] = [];
+  const seen = new Set<string>();
+  const re = /https:\/\/images\.finncdn\.no\/dynamic\/[^"'\\ ]+?\.jpg/gi;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(html)) !== null) {
+    let u = m[0].replace(/\\u002[fF]/g, '/');
+    if (/companyprofile|brandprofile|logo/i.test(u)) continue;
+    // normalise width segment so the same photo at different sizes dedupes
+    const key = u.replace(/\/dynamic\/[^/]+\//, '/dynamic/W/');
+    if (seen.has(key)) continue;
+    seen.add(key);
+    u = u.replace(/\/dynamic\/(default|\d+w)\//, '/dynamic/1280w/');
+    out.push(u);
+    if (out.length >= 12) break;
+  }
+  return out;
 }
 
 interface ComputedResult {
@@ -106,6 +133,8 @@ interface ComputedResult {
   pricePerSqm: number;
   rate: number;
   termYears: number;
+  etasje: number;
+  images: string[];
 }
 
 function compute(raw: Record<string, number | string>): ComputedResult {
@@ -246,6 +275,8 @@ function compute(raw: Record<string, number | string>): ComputedResult {
     termYears,
     fellesutgRaw,
     kommunaleRaw,
+    etasje: (raw.etasje as number) || 0,
+    images: [],
   };
 }
 
@@ -279,6 +310,7 @@ export async function GET(request: Request) {
     const html = await res.text();
     const raw = parseFinnHtml(html);
     const result = compute(raw);
+    result.images = extractImages(html);
 
     return Response.json(result);
   } catch (err) {

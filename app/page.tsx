@@ -1,757 +1,178 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
-import { saveProperty, newId } from './lib/savedProperties';
 
-const fmt = (n: number) => new Intl.NumberFormat('nb-NO').format(Math.round(n));
+const card = { background: '#ffffff', border: '1px solid rgba(15,23,42,0.08)', boxShadow: '0 1px 3px rgba(15,23,42,0.04)' };
+const blueGlow = { boxShadow: '0 10px 40px rgba(37,99,235,0.18), 0 0 0 1px rgba(37,99,235,0.25)' };
 
-function calcAnnuitet(principal: number, annualRate: number, years: number) {
-  if (principal <= 0) return 0;
-  const r = annualRate / 100 / 12;
-  const n = years * 12;
-  if (r === 0) return Math.round(principal / n);
-  return Math.round(principal * (r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1));
-}
+const SAMPLE = [
+  { time: '2 min siden', addr: 'Thorvald Meyers gate 41', price: '4 850 000 kr', area: '52 m²', rooms: '2-roms', year: 1935, summary: 'Lys leilighet på Grünerløkka med oppusset bad og nyere kjøkken.' },
+  { time: '6 min siden', addr: 'Bygdøy allé 12', price: '8 200 000 kr', area: '78 m²', rooms: '3-roms', year: 1924, summary: 'Klassisk Frogner-leilighet med stukkatur og høyt under taket.' },
+  { time: '11 min siden', addr: 'Storgata 36, Trondheim', price: '3 100 000 kr', area: '45 m²', rooms: '2-roms', year: 2008, summary: 'Moderne leilighet sentralt i Trondheim med balkong mot sør.' },
+  { time: '15 min siden', addr: 'Marken 18, Bergen', price: '4 400 000 kr', area: '61 m²', rooms: '3-roms', year: 1962, summary: 'Romslig leilighet i Bergen sentrum med god utsikt.' },
+  { time: '22 min siden', addr: 'Kirkegata 9, Stavanger', price: '3 750 000 kr', area: '54 m²', rooms: '2-roms', year: 1998, summary: 'Velholdt leilighet nær sjøen med praktisk planløsning.' },
+];
 
-const CITIES: Record<string, number> = {
-  oslo: 1.0, bergen: 0.82, stavanger: 0.80, trondheim: 0.73, annet: 0.65,
-};
-
-// ─── Small components ────────────────────────────────────────────────────────
-
-function Field({ label, children, hint }: { label: string; children: React.ReactNode; hint?: string }) {
-  return (
-    <div className="flex flex-col gap-1.5">
-      <label className="text-xs font-semibold uppercase tracking-wider text-slate-400">{label}</label>
-      {children}
-      {hint && <p className="text-xs text-slate-400 mt-0.5">{hint}</p>}
-    </div>
-  );
-}
-
-const inputCls = [
-  'w-full rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-600',
-  'focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent',
-].join(' ');
-
-const inputStyle = { background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(255,255,255,0.08)' };
-
-function TInput({ value, onChange, placeholder, readOnly }: {
-  value: string; onChange?: (v: string) => void; placeholder?: string; readOnly?: boolean;
-}) {
-  return (
-    <input type="text" value={value} onChange={e => onChange?.(e.target.value)}
-      placeholder={placeholder} readOnly={readOnly}
-      className={`${inputCls} ${readOnly ? 'opacity-60 cursor-default' : ''}`} style={inputStyle} />
-  );
-}
-
-// Number input with thousand separators (integers only)
-function NumInput({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder?: string }) {
-  const raw = value.replace(/[^\d]/g, '');
-  const display = raw ? new Intl.NumberFormat('nb-NO').format(parseInt(raw)) : '';
-  return (
-    <input type="text" inputMode="numeric"
-      value={display}
-      onChange={e => onChange(e.target.value.replace(/[^\d]/g, ''))}
-      placeholder={placeholder}
-      className={inputCls} style={inputStyle} />
-  );
-}
-
-// Rate input: comma as decimal separator
-function RateInput({ value, onChange, placeholder, readOnly }: {
-  value: string; onChange?: (v: string) => void; placeholder?: string; readOnly?: boolean;
-}) {
-  return (
-    <input type="text" inputMode="decimal"
-      value={value.replace('.', ',')}
-      onChange={e => onChange?.(e.target.value.replace(',', '.').replace(/[^0-9.]/g, ''))}
-      placeholder={placeholder} readOnly={readOnly}
-      className={`${inputCls} ${readOnly ? 'opacity-60 cursor-default' : ''}`} style={inputStyle} />
-  );
-}
-
-function SRow({ label, value, color }: { label: string; value: string; color?: string }) {
-  return (
-    <div className="flex justify-between items-center py-2.5" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-      <span className="text-sm text-slate-400">{label}</span>
-      <span className={`text-sm font-bold ${color || 'text-white'}`}>{value}</span>
-    </div>
-  );
-}
-
-const cardStyle = { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' };
-
-function Card({ children, className }: { children: React.ReactNode; className?: string }) {
-  return (
-    <div className={`rounded-2xl p-6 ${className || ''}`} style={cardStyle}>
-      {children}
-    </div>
-  );
-}
-
-function MetricBox({ label, value, color }: { label: string; value: string; color?: string }) {
-  return (
-    <div className="flex flex-col gap-1 p-4 rounded-xl" style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.06)' }}>
-      <span className="text-xs text-slate-500 font-medium">{label}</span>
-      <span className={`text-base font-bold ${color || 'text-white'}`}>{value}</span>
-    </div>
-  );
-}
-
-// ─── Main component ──────────────────────────────────────────────────────────
-
-export default function Home() {
-  const [menuOpen, setMenuOpen] = useState(false);
+export default function Page() {
   const [url, setUrl] = useState('');
-  const [fetching, setFetching] = useState(false);
-  const [fetchMsg, setFetchMsg] = useState('');
-  const [fetchErr, setFetchErr] = useState('');
-  const [avdragsfrihet, setAvdragsfrihet] = useState(false);
-  const [leieTab, setLeieTab] = useState('fast');
-  const [saveMsg, setSaveMsg] = useState('');
 
-  const [form, setForm] = useState({
-    adresse: '',
-    prisantydning: '', gjeld: '', ekPct: '15',
-    bra: '', rooms: '2', city: 'oslo',
-    nominellRente: '4.80', effektivRente: '4.91', termYears: '25', laanetype: 'annuitet',
-    kommunale: '', eiendomsskatt: '', vedlikeholdKr: '', fellesutg: '',
-    wifi: '', strom: '', forsikring: '', utleiemegler: '',
-    rent: '', maanederUtleid: '12',
-  });
-  const setF = (k: string) => (v: string) => setForm(p => ({ ...p, [k]: v }));
-
-  // Sync rate fields: changing one recalculates the other
-  const handleNominellChange = (v: string) => {
-    const n = parseFloat(v) || 0;
-    const e = n > 0 ? (Math.round(((Math.pow(1 + n / 100 / 12, 12) - 1) * 100) * 100) / 100) : 0;
-    setForm(p => ({ ...p, nominellRente: v, effektivRente: e > 0 ? String(e) : '' }));
-  };
-
-  const handleEffektivChange = (v: string) => {
-    const e = parseFloat(v) || 0;
-    const n = e > 0 ? (Math.round((12 * (Math.pow(1 + e / 100, 1 / 12) - 1) * 100) * 100) / 100) : 0;
-    setForm(p => ({ ...p, effektivRente: v, nominellRente: n > 0 ? String(n) : '' }));
-  };
-
-  const fetchFromFinn = async () => {
+  const goAnalyse = () => {
     if (!url.trim()) return;
-    setFetching(true); setFetchMsg(''); setFetchErr('');
-    try {
-      const res = await fetch(`/api/analyze?url=${encodeURIComponent(url.trim())}`);
-      const data = await res.json();
-      if (data.error) { setFetchErr(data.error); return; }
-      const addr = (data.address || '').toLowerCase();
-      setForm(p => ({
-        ...p,
-        adresse: data.address || '',
-        prisantydning: String(data.prisantydning || ''),
-        gjeld: String(data.gjeld || ''),
-        bra: String(data.bra || ''),
-        rooms: String(data.rooms || '2'),
-        fellesutg: String(data.fellesutgRaw || ''),
-        kommunale: String(data.kommunaleRaw || ''),
-        rent: String(data.rent || ''),
-        city: addr.includes('oslo') ? 'oslo' : addr.includes('bergen') ? 'bergen'
-          : addr.includes('stavanger') ? 'stavanger' : addr.includes('trondheim') ? 'trondheim' : 'annet',
-      }));
-      setFetchMsg('✓ Hentet fra Finn.no');
-    } catch { setFetchErr('Kunne ikke hente. Prøv igjen.'); }
-    finally { setFetching(false); }
+    window.location.href = `/analyse?finn=${encodeURIComponent(url.trim())}`;
   };
-
-  const calc = useMemo(() => {
-    const price = parseInt(form.prisantydning.replace(/\D/g, '')) || 0;
-    if (!price) return null;
-
-    const gjeld = parseInt(form.gjeld.replace(/\D/g, '')) || 0;
-    const total = price + gjeld;
-    const bra = parseInt(form.bra) || 50;
-    const rooms = parseInt(form.rooms) || 2;
-    const nominellRente = parseFloat(form.nominellRente) || 4.80;
-    const termYears = parseInt(form.termYears) || 25;
-    const ekPct = parseInt(form.ekPct) || 15;
-
-    const dokumentavgift = Math.round(price * 0.025);
-
-    const cityMult = CITIES[form.city] ?? 0.65;
-    const osloBase = rooms <= 1 ? { base: 14444, typBra: 35 } : rooms === 2 ? { base: 18703, typBra: 55 } : { base: 23260, typBra: 75 };
-    const estimatedRent = Math.round(osloBase.base * cityMult * (bra / osloBase.typBra) * 1.03);
-    const rentRaw = parseInt(form.rent.replace(/\D/g, '')) || estimatedRent;
-    const maanederUtleid = parseInt(form.maanederUtleid) || 12;
-    const effectiveRent = Math.round(rentRaw * maanederUtleid / 12);
-
-    const fellesutg = parseInt(form.fellesutg.replace(/\D/g, '')) || Math.round(bra * 38);
-    const kommunale_mnd = Math.round((parseInt(form.kommunale.replace(/\D/g, '')) || 0) / 12);
-    const eiendomsskatt_mnd = Math.round((parseInt(form.eiendomsskatt.replace(/\D/g, '')) || 0) / 12);
-    const vedlikehold_mnd = Math.round((parseInt(form.vedlikeholdKr.replace(/\D/g, '')) || 0) / 12);
-    const forsikring = parseInt(form.forsikring.replace(/\D/g, '')) || 0;
-    const wifi = parseInt(form.wifi.replace(/\D/g, '')) || 0;
-    const strom = parseInt(form.strom.replace(/\D/g, '')) || 0;
-    const utleiemegler = parseInt(form.utleiemegler.replace(/\D/g, '')) || 0;
-
-    const operatingCosts = fellesutg + kommunale_mnd + eiendomsskatt_mnd + vedlikehold_mnd + forsikring + wifi + strom + utleiemegler;
-
-    const equity = Math.round(total * ekPct / 100);
-    const loan = Math.max(0, total - equity);
-
-    const monthlyInterest = Math.round(loan * nominellRente / 100 / 12);
-    let pmt = 0, monthlyPrincipal = 0;
-    if (avdragsfrihet) {
-      pmt = monthlyInterest; monthlyPrincipal = 0;
-    } else if (form.laanetype === 'serie') {
-      monthlyPrincipal = Math.round(loan / (termYears * 12));
-      pmt = monthlyPrincipal + monthlyInterest;
-    } else {
-      pmt = calcAnnuitet(loan, nominellRente, termYears);
-      monthlyPrincipal = Math.max(0, pmt - monthlyInterest);
-    }
-
-    const totalCosts = operatingCosts + pmt;
-    const preTaxCF = effectiveRent - totalCosts;
-    const taxable = Math.max(0, effectiveRent - operatingCosts - monthlyInterest);
-    const monthlyTax = Math.round(taxable * 0.22);
-    const rentefradragAnnual = Math.round(monthlyInterest * 12 * 0.22);
-    const afterTaxCF = preTaxCF - monthlyTax;
-
-    const netOperatingIncome = (effectiveRent - operatingCosts) * 12;
-    const nettoYield = total > 0 ? Math.round(netOperatingIncome / total * 1000) / 10 : 0;
-    const arligNettofortjeneste = afterTaxCF * 12;
-    const roi = equity > 0 ? Math.round((arligNettofortjeneste + monthlyPrincipal * 12) / equity * 1000) / 10 : 0;
-
-    const totalLoanPayment = pmt * termYears * 12;
-    const totalInterest = Math.max(0, totalLoanPayment - loan);
-
-    return {
-      total, dokumentavgift, effectiveRent, estimatedRent,
-      fellesutg, operatingCosts,
-      loan, equity, pmt, monthlyInterest, monthlyPrincipal,
-      totalCosts, afterTaxCF, monthlyTax, rentefradragAnnual,
-      nettoYield, arligNettofortjeneste, roi,
-      totalLoanPayment, totalInterest,
-    };
-  }, [form, avdragsfrihet]);
-
-  const isPos = calc ? calc.afterTaxCF >= 0 : false;
-  const ekPct_frac = ((parseInt(form.ekPct) - 10) / 40) * 100;
-  const termPct = ((parseInt(form.termYears) - 5) / 25) * 100;
-  const maanederPct = ((parseInt(form.maanederUtleid) - 1) / 11) * 100;
 
   return (
-    <div className="min-h-screen" style={{ background: '#0d1b2e' }}>
-
-      {/* Header */}
-      <header className="px-4 sm:px-6 py-3 sm:py-4 sticky top-0 z-20 backdrop-blur"
-        style={{ background: 'rgba(13,27,46,0.95)', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-        <div className="max-w-6xl mx-auto grid grid-cols-[auto_1fr_auto] items-center gap-2">
-          <div className="flex items-center gap-2 sm:gap-3 shrink-0 relative justify-self-start">
-            <button onClick={() => setMenuOpen(v => !v)} aria-label="Meny" aria-expanded={menuOpen}
-              className="p-2 rounded-lg text-slate-300 hover:text-white hover:bg-white/5 transition-colors"
-              style={{ border: '1px solid rgba(255,255,255,0.08)' }}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
-                <line x1="4" y1="7" x2="20" y2="7" />
-                <line x1="4" y1="12" x2="20" y2="12" />
-                <line x1="4" y1="17" x2="20" y2="17" />
-              </svg>
-            </button>
-            <img src="/logo.svg" alt="Utleiekalkulator logo" className="w-8 h-8 sm:w-9 sm:h-9" />
-            <span className="hidden sm:inline font-extrabold text-lg bg-gradient-to-r from-white to-blue-400 bg-clip-text text-transparent tracking-tight">Utleiekalkulator</span>
-
-            {menuOpen && (
-              <>
-                <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(false)} />
-                <div className="absolute left-0 top-full mt-2 w-64 rounded-xl p-2 z-20 shadow-2xl"
-                  style={{ background: '#0d1b2e', border: '1px solid rgba(255,255,255,0.10)' }}>
-                  <p className="text-xs text-slate-500 uppercase tracking-wider px-3 py-2">Guider</p>
-                  <Link href="/lonner-det-seg-a-leie-ut" onClick={() => setMenuOpen(false)}
-                    className="block px-3 py-2 rounded-lg text-sm font-medium text-amber-200 hover:bg-amber-500/10 transition-colors">
-                    Lønner det seg å leie ut?
-                  </Link>
-                  <Link href="/skatt-leieinntekter" onClick={() => setMenuOpen(false)}
-                    className="block px-3 py-2 rounded-lg text-sm font-medium text-emerald-200 hover:bg-emerald-500/10 transition-colors">
-                    Skatt på utleie
-                  </Link>
-                  <Link href="/egenkapital-utleiebolig" onClick={() => setMenuOpen(false)}
-                    className="block px-3 py-2 rounded-lg text-sm font-medium text-sky-200 hover:bg-sky-500/10 transition-colors">
-                    Egenkapitalkrav
-                  </Link>
-                  <div className="h-px my-2" style={{ background: 'rgba(255,255,255,0.08)' }} />
-                  <Link href="/slik-beregnes-det" onClick={() => setMenuOpen(false)}
-                    className="block px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:bg-white/5 transition-colors">
-                    Slik beregnes det
-                  </Link>
-                  <Link href="/personvern" onClick={() => setMenuOpen(false)}
-                    className="block px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:bg-white/5 transition-colors">
-                    Personvern
-                  </Link>
-                </div>
-              </>
-            )}
+    <div className="min-h-screen text-slate-900" style={{ background: '#f7f8fa' }}>
+      {/* Header — pill nav */}
+      <header className="px-4 sm:px-6 py-4">
+        <div className="max-w-6xl mx-auto flex items-center justify-center">
+          <div className="flex items-center gap-1 sm:gap-2 rounded-full px-2 py-1.5 flex-wrap justify-center"
+            style={{ background: '#ffffff', border: '1px solid rgba(15,23,42,0.08)', boxShadow: '0 1px 3px rgba(15,23,42,0.05)' }}>
+            <Link href="/" className="flex items-center gap-2 pl-3 pr-4 py-1.5 rounded-full"
+              style={{ background: 'rgba(37,99,235,0.08)', border: '1px solid rgba(37,99,235,0.25)' }}>
+              <img src="/logo.svg" alt="" className="w-6 h-6" />
+              <span className="font-bold text-sm">Utleiekalkulator</span>
+            </Link>
+            <Link href="/analyse" className="px-3 py-1.5 text-sm text-slate-600 hover:text-slate-900 transition-colors flex items-center gap-1.5">
+              <span className="text-base leading-none">🔍</span> Analyser salgsoppgave
+            </Link>
+            <Link href="/kalkulator" className="px-3 py-1.5 text-sm text-slate-600 hover:text-slate-900 transition-colors flex items-center gap-1.5">
+              <span className="text-lg leading-none">＋</span> Kalkulator
+            </Link>
+            <Link href="/mine-boliger" className="px-3 py-1.5 text-sm text-slate-600 hover:text-slate-900 transition-colors flex items-center gap-1.5">
+              <span className="text-lg leading-none">⌂</span> Mine boliger
+            </Link>
           </div>
-          <nav className="flex items-center justify-center gap-1 sm:gap-2 justify-self-center">
-            <Link href="/mine-boliger" className="text-xs sm:text-sm font-semibold text-violet-200 hover:text-white px-2 sm:px-3 py-2 rounded-lg transition-all whitespace-nowrap"
-              style={{ background: 'rgba(167,139,250,0.10)', border: '1px solid rgba(167,139,250,0.25)' }}>
-              <span className="sm:hidden">Mine</span><span className="hidden sm:inline">Mine boliger</span>
-            </Link>
-            <Link href="/rapport"
-              className="text-xs sm:text-sm font-bold text-white px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg transition-all hover:bg-blue-500 whitespace-nowrap shadow-lg shadow-blue-600/20"
-              style={{ background: '#2563eb' }}>
-              <span className="sm:hidden">Salgsoppgave</span><span className="hidden sm:inline">Analyser salgsoppgave</span>
-            </Link>
-          </nav>
-          <div className="justify-self-end" aria-hidden />
         </div>
       </header>
 
       {/* Hero */}
-      <section className="px-5 sm:px-6 pt-10 pb-6 max-w-5xl mx-auto text-center">
-        <h1 className="text-3xl sm:text-5xl font-black tracking-tight bg-gradient-to-br from-white to-blue-300 bg-clip-text text-transparent leading-tight">
-          Se om utleieboligen går i pluss — på 30 sekunder
-        </h1>
-        <p className="mt-4 text-base sm:text-lg text-slate-300 max-w-2xl mx-auto leading-relaxed">
-          Regn ut yield, kontantstrøm, lån og skatt for utleiebolig. Lim inn en Finn-lenke eller fyll inn tallene selv.
-        </p>
-        <div className="mt-5 flex flex-wrap justify-center gap-2 text-xs text-slate-400">
-          <span className="px-3 py-1.5 rounded-full" style={cardStyle}>✓ Gratis</span>
-          <span className="px-3 py-1.5 rounded-full" style={cardStyle}>✓ Ingen registrering</span>
-          <span className="px-3 py-1.5 rounded-full" style={cardStyle}>✓ Norske skatteregler 2026</span>
-          <span className="px-3 py-1.5 rounded-full" style={cardStyle}>✓ Finn.no-import</span>
+      <section className="px-4 pt-12 sm:pt-20 pb-10">
+        <div className="max-w-3xl mx-auto text-center">
+          <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold text-blue-700 mb-6"
+            style={{ background: 'rgba(37,99,235,0.10)', border: '1px solid rgba(37,99,235,0.25)' }}>
+            Boliganalyse for kjøpere og investorer
+          </span>
+          <h1 className="text-4xl sm:text-6xl font-black tracking-tight leading-[1.05] mb-6 text-slate-900">
+            Forstå boligen<br />
+            <span className="text-blue-600">før du byr</span>
+          </h1>
+          <p className="text-lg sm:text-xl text-slate-500 leading-relaxed mb-10 max-w-2xl mx-auto">
+            Lim inn en Finn-lenke. Vi avdekker risiko i salgsoppgaven (TG2/TG3), gir deg spørsmål å stille megler,
+            og regner yield og kontantstrøm — alt på sekunder.
+          </p>
+
+          {/* CTA card */}
+          <div className="rounded-2xl p-2 mx-auto max-w-2xl" style={blueGlow}>
+            <div className="rounded-xl flex flex-col sm:flex-row items-stretch gap-2 p-2"
+              style={{ background: '#ffffff', border: '1px solid rgba(37,99,235,0.25)' }}>
+              <div className="flex-1 text-left px-3 py-2">
+                <p className="text-xs text-blue-600 font-semibold uppercase tracking-wider">Bolig-annonse</p>
+                <input value={url} onChange={e => setUrl(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && goAnalyse()}
+                  placeholder="Lim inn Finn-lenke…"
+                  className="w-full bg-transparent outline-none text-base text-slate-900 placeholder-slate-400 mt-0.5" />
+              </div>
+              <button onClick={goAnalyse}
+                className="px-6 py-3 rounded-xl font-bold text-white whitespace-nowrap flex items-center justify-center gap-2 transition-transform hover:scale-[1.02]"
+                style={{ background: 'linear-gradient(135deg, #2563eb, #1d4ed8)' }}>
+                Analyser bolig <span>→</span>
+              </button>
+            </div>
+          </div>
+          <p className="text-xs text-slate-500 mt-4 max-w-xl mx-auto leading-relaxed">
+            Du kan også <Link href="/analyse" className="text-blue-600 hover:text-blue-700 underline">laste opp salgsoppgaven (PDF)</Link> direkte.
+            Verktøyet er et støtteverktøy og erstatter ikke profesjonell rådgivning — alle beslutninger må baseres på egen research.
+          </p>
         </div>
       </section>
 
-      <div className="max-w-6xl mx-auto px-5 sm:px-4 pt-2 pb-8">
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_390px] gap-6 items-start">
-
-          {/* ── LEFT: INPUTS ── */}
-          <div className="flex flex-col gap-5">
-
-            {/* 1. Informasjon */}
-            <Card>
-              <h2 className="font-semibold text-white mb-1">Informasjon</h2>
-              <p className="text-xs text-slate-500 mb-4">Boliginformasjon fra FINN</p>
-              <div className="flex flex-col gap-4">
-                <Field label="Finn-link">
-                  <div className="flex gap-2">
-                    <input type="url" value={url} onChange={e => setUrl(e.target.value)}
-                      onKeyDown={e => e.key === 'Enter' && fetchFromFinn()}
-                      placeholder="https://www.finn.no/realestate/..."
-                      className={inputCls} style={inputStyle} />
-                    <button onClick={fetchFromFinn} disabled={fetching || !url.trim()}
-                      className="px-5 py-2.5 bg-blue-600 text-white text-sm font-bold rounded-xl hover:bg-blue-500 disabled:opacity-40 transition-all whitespace-nowrap shadow-lg shadow-blue-600/20">
-                      {fetching ? '...' : 'Hent fra FINN'}
-                    </button>
-                  </div>
-                  {fetchMsg && <p className="mt-1 text-emerald-400 text-xs font-medium">✓ {fetchMsg}</p>}
-                  {fetchErr && <p className="mt-1 text-red-400 text-xs">{fetchErr}</p>}
-                </Field>
-                <Field label="Adresse">
-                  <TInput value={form.adresse} onChange={setF('adresse')} placeholder="Adresse" />
-                </Field>
+      {/* Andre analyserte nylig */}
+      <section className="px-4 pt-8 pb-16 max-w-6xl mx-auto">
+        <h2 className="text-xl font-bold mb-5">Andre analyserte nylig</h2>
+        <div className="flex gap-4 overflow-x-auto pb-4 -mx-4 px-4 snap-x">
+          {SAMPLE.map((s, i) => (
+            <div key={i} className="shrink-0 w-64 rounded-2xl overflow-hidden snap-start" style={card}>
+              <div className="h-40 relative" style={{ background: `linear-gradient(135deg, hsl(${(i*47)%360},45%,82%), hsl(${(i*47+60)%360},45%,72%))` }}>
+                <span className="absolute top-3 left-3 text-xs font-medium px-2 py-1 rounded-md text-slate-700"
+                  style={{ background: 'rgba(255,255,255,0.7)', backdropFilter: 'blur(4px)' }}>{s.time}</span>
               </div>
-            </Card>
-
-            {/* 2. Grunnlag */}
-            <Card>
-              <div className="flex justify-between items-center mb-5">
-                <h2 className="font-semibold text-white">Grunnlag</h2>
-                <span className="text-xs text-slate-500">Formatering og autofyll</span>
+              <div className="p-4">
+                <p className="font-semibold text-sm truncate">{s.addr}</p>
+                <div className="flex justify-between text-sm mt-1.5">
+                  <span className="font-bold text-slate-900">{s.price}</span>
+                  <span className="text-slate-500">{s.area}</span>
+                </div>
+                <div className="flex gap-2 mt-2">
+                  <span className="text-xs font-medium px-2.5 py-1 rounded-md text-slate-600"
+                    style={{ background: 'rgba(15,23,42,0.05)', border: '1px solid rgba(15,23,42,0.1)' }}>{s.rooms}</span>
+                  <span className="text-xs font-medium px-2.5 py-1 rounded-md text-slate-600"
+                    style={{ background: 'rgba(15,23,42,0.05)', border: '1px solid rgba(15,23,42,0.1)' }}>Byggeår {s.year}</span>
+                </div>
+                <p className="text-xs text-slate-500 leading-relaxed mt-3">{s.summary}</p>
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <Field label="Kjøpssum">
-                  <NumInput value={form.prisantydning} onChange={setF('prisantydning')} placeholder="5 000 000" />
-                </Field>
-                <Field label="Dokumentavgift (2,5%)">
-                  <TInput value={calc ? `${fmt(calc.dokumentavgift)} kr` : ''} placeholder="125 000 kr" readOnly />
-                </Field>
-                <div className="col-span-2">
-                  <div className="flex flex-col gap-2">
-                    <label className="text-xs font-semibold uppercase tracking-wider text-slate-400">Egenkapital %</label>
-                    <div className="flex gap-3 items-center">
-                      <input type="range" min={10} max={50} step={1} value={form.ekPct}
-                        onChange={e => setF('ekPct')(e.target.value)}
-                        className="flex-1 h-2 rounded-full appearance-none cursor-pointer"
-                        style={{ background: `linear-gradient(to right,#3b82f6 ${ekPct_frac}%,rgba(255,255,255,0.1) ${ekPct_frac}%)` }} />
-                      <div className="flex items-center gap-1">
-                        <input type="number" value={form.ekPct} onChange={e => setF('ekPct')(e.target.value)}
-                          className="w-14 text-center rounded-lg py-1.5 text-sm text-white font-bold focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          style={inputStyle} min={10} max={50} />
-                        <span className="text-sm text-slate-400">%</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <Field label="Egenkapital (beløp)" hint="Beregnes fra kjøpssum × %">
-                  <TInput value={calc ? `${fmt(calc.equity)} kr` : ''} placeholder="750 000 kr" readOnly />
-                </Field>
-                <Field label="Fellesgjeld" hint="Andel av borettslag/sameie sin gjeld">
-                  <NumInput value={form.gjeld} onChange={setF('gjeld')} placeholder="0" />
-                </Field>
-              </div>
-            </Card>
-
-            {/* 3. Utgifter */}
-            <Card>
-              <div className="flex justify-between items-center mb-5">
-                <h2 className="font-semibold text-white">Utgifter</h2>
-                <span className="text-xs text-slate-500">Standard + egendefinerte</span>
-              </div>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
-                <Field label="Kommunale avg. (år)" hint="Vann, avløp, renovasjon">
-                  <NumInput value={form.kommunale} onChange={setF('kommunale')} placeholder="" />
-                </Field>
-                <Field label="Eiendomsskatt (år)" hint="Kun i enkelte kommuner">
-                  <NumInput value={form.eiendomsskatt} onChange={setF('eiendomsskatt')} placeholder="" />
-                </Field>
-                <Field label="Vedlikehold (år)" hint="Tommelregel: ~1 % av boligverdi">
-                  <NumInput value={form.vedlikeholdKr} onChange={setF('vedlikeholdKr')} placeholder="" />
-                </Field>
-                <Field label="Felleskostn. (mnd)">
-                  <NumInput value={form.fellesutg} onChange={setF('fellesutg')}
-                    placeholder={calc ? `${fmt(calc.fellesutg)}` : ''} />
-                </Field>
-                <Field label="Wifi/TV (mnd)">
-                  <NumInput value={form.wifi} onChange={setF('wifi')} placeholder="" />
-                </Field>
-                <Field label="Strøm (mnd)">
-                  <NumInput value={form.strom} onChange={setF('strom')} placeholder="" />
-                </Field>
-                <Field label="Forsikring (mnd)">
-                  <NumInput value={form.forsikring} onChange={setF('forsikring')} placeholder="" />
-                </Field>
-                <Field label="Utleiemegler (mnd)">
-                  <NumInput value={form.utleiemegler} onChange={setF('utleiemegler')} placeholder="" />
-                </Field>
-              </div>
-              <div className="flex justify-between items-center pt-4" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-                <div>
-                  <p className="text-sm font-medium text-white">Egendefinerte utgifter</p>
-                  <p className="text-xs text-slate-500 mt-0.5">Velg månedlig eller årlig. Beløp formateres automatisk.</p>
-                </div>
-                <button className="text-xs text-blue-400 font-medium hover:text-blue-300 transition-colors px-3 py-1.5 rounded-lg"
-                  style={{ border: '1px solid rgba(59,130,246,0.3)' }}>
-                  Legg til utgift
-                </button>
-              </div>
-            </Card>
-
-            {/* 4. Leieinntekter */}
-            <Card>
-              <div className="flex justify-between items-center mb-5">
-                <h2 className="font-semibold text-white">Leieinntekter</h2>
-                <span className="text-xs text-slate-500">Velg modell</span>
-              </div>
-              <div className="grid grid-cols-4 gap-1 p-1 rounded-xl mb-5"
-                style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.08)' }}>
-                {[
-                  { id: 'korttid', label: 'Korttidsleie' },
-                  { id: 'fast', label: 'Fast månedsleie' },
-                  { id: 'kollektiv', label: 'Kollektiv' },
-                  { id: 'langkorttid', label: 'Lang og korttidsleie' },
-                ].map(tab => (
-                  <button key={tab.id} type="button" onClick={() => setLeieTab(tab.id)}
-                    className={`py-2 px-1 rounded-lg text-xs font-medium transition-all ${
-                      leieTab === tab.id ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'
-                    }`}>
-                    {tab.label}
-                  </button>
-                ))}
-              </div>
-
-              {leieTab === 'fast' ? (
-                <div className="flex flex-col gap-5">
-                  <div className="grid grid-cols-2 gap-4">
-                    <Field label="Månedsleie">
-                      <NumInput value={form.rent} onChange={setF('rent')}
-                        placeholder={calc ? `${fmt(calc.estimatedRent)}` : ''} />
-                    </Field>
-                    <div>
-                      <div className="flex justify-between items-baseline mb-2">
-                        <label className="text-xs font-semibold uppercase tracking-wider text-slate-400">Antall måneder utleid per år</label>
-                        <div className="flex items-center gap-1">
-                          <span className="text-base font-bold text-blue-400">{form.maanederUtleid}</span>
-                          <span className="text-sm text-slate-400">mnd</span>
-                        </div>
-                      </div>
-                      <input type="range" min={1} max={12} step={1} value={form.maanederUtleid}
-                        onChange={e => setF('maanederUtleid')(e.target.value)}
-                        className="w-full h-2 rounded-full appearance-none cursor-pointer"
-                        style={{ background: `linear-gradient(to right,#3b82f6 ${maanederPct}%,rgba(255,255,255,0.1) ${maanederPct}%)` }} />
-                      <div className="flex justify-between text-xs text-slate-400 mt-1"><span>1 mnd</span><span>12 mnd</span></div>
-                    </div>
-                  </div>
-                  <div>
-                    <p className="text-xs text-slate-500 mb-2">Sammenlign utleiepriser:</p>
-                    <div className="flex gap-2">
-                      <a href="https://www.finn.no/realestate/lettings/search.html" target="_blank" rel="noopener noreferrer"
-                        className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-medium text-white transition-all hover:opacity-80"
-                        style={{ background: 'rgba(0,80,200,0.25)', border: '1px solid rgba(0,100,220,0.4)' }}>
-                        🔵 Søk på FINN
-                      </a>
-                      <a href="https://hybel.no" target="_blank" rel="noopener noreferrer"
-                        className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-medium text-white transition-all hover:opacity-80"
-                        style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)' }}>
-                        🏠 Søk på Hybel
-                      </a>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="text-center py-8 text-slate-500 text-sm">
-                  Denne modellen kommer snart
-                </div>
-              )}
-            </Card>
-
-            {/* 5. Lån (inputs) */}
-            <Card>
-              <div className="flex justify-between items-center mb-5">
-                <h2 className="font-semibold text-white">Lån</h2>
-                <span className="text-xs text-slate-500">Rediger nominell eller effektiv</span>
-              </div>
-              <div className="flex flex-col gap-5">
-                <div className="grid grid-cols-2 gap-4">
-                  <Field label="Nominell rente (p.a.)">
-                    <RateInput value={form.nominellRente} onChange={handleNominellChange} placeholder="4,80" />
-                  </Field>
-                  <Field label="Effektiv rente (p.a.)">
-                    <RateInput value={form.effektivRente} onChange={handleEffektivChange} placeholder="4,91" />
-                  </Field>
-                </div>
-                <div>
-                  <div className="flex justify-between items-baseline mb-2">
-                    <label className="text-xs font-semibold uppercase tracking-wider text-slate-400">Løpetid (år)</label>
-                    <div className="flex items-center gap-1">
-                      <span className="text-base font-bold text-blue-400">{form.termYears}</span>
-                      <span className="text-sm text-slate-400">år</span>
-                    </div>
-                  </div>
-                  <input type="range" min={5} max={30} step={1} value={form.termYears}
-                    onChange={e => setF('termYears')(e.target.value)}
-                    className="w-full h-2 rounded-full appearance-none cursor-pointer"
-                    style={{ background: `linear-gradient(to right,#3b82f6 ${termPct}%,rgba(255,255,255,0.1) ${termPct}%)` }} />
-                  <div className="flex justify-between text-xs text-slate-400 mt-1"><span>5 år</span><span>30 år</span></div>
-                </div>
-                <label className="flex items-center gap-3 cursor-pointer select-none p-3 rounded-xl" style={{ background: 'rgba(0,0,0,0.2)' }}>
-                  <div className="relative inline-block w-10 h-6" onClick={() => setAvdragsfrihet(v => !v)}>
-                    <div className={`w-10 h-6 rounded-full transition-colors ${avdragsfrihet ? 'bg-blue-600' : 'bg-slate-700'}`} />
-                    <div className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${avdragsfrihet ? 'translate-x-4' : 'translate-x-0'}`} />
-                  </div>
-                  <span className="text-sm text-white">Avdragsfritt lån (kun rentebetaling)</span>
-                </label>
-              </div>
-            </Card>
-
-            {/* Lån details — shown below inputs when calc is ready */}
-            {calc && (
-              <Card>
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="font-semibold text-white">Lånedetaljer</h3>
-                  <span className="text-xs text-slate-500">Beregnet</span>
-                </div>
-                <div className="grid grid-cols-3 gap-3">
-                  <MetricBox label="Lån i måneden" value={`${fmt(calc.pmt)} kr`} color="text-red-400" />
-                  <MetricBox label="Renter i måneden" value={`${fmt(calc.monthlyInterest)} kr`} color="text-red-400" />
-                  <MetricBox label="Avdrag i måneden" value={`${fmt(calc.monthlyPrincipal)} kr`} color="text-red-400" />
-                  <MetricBox label="Rentefradrag (år)" value={`${fmt(calc.rentefradragAnnual)} kr`} color="text-emerald-400" />
-                  <MetricBox label="Totalpris på lån" value={`${fmt(calc.totalLoanPayment)} kr`} />
-                  <MetricBox label="Renter totalt" value={`${fmt(calc.totalInterest)} kr`} />
-                </div>
-              </Card>
-            )}
-
-            {/* Rentestress-test */}
-            {calc && (() => {
-              const baseRate = parseFloat(form.nominellRente) || 4.80;
-              const scenarios = [-1, 0, 1, 2].map(delta => {
-                const r = Math.max(0, baseRate + delta);
-                const pmt = avdragsfrihet
-                  ? Math.round(calc.loan * r / 100 / 12)
-                  : form.laanetype === 'serie'
-                    ? Math.round(calc.loan / (parseInt(form.termYears) * 12)) + Math.round(calc.loan * r / 100 / 12)
-                    : calcAnnuitet(calc.loan, r, parseInt(form.termYears) || 25);
-                const monthlyInt = Math.round(calc.loan * r / 100 / 12);
-                const taxable = Math.max(0, calc.effectiveRent - calc.operatingCosts - monthlyInt);
-                const monthlyTax = Math.round(taxable * 0.22);
-                const cf = calc.effectiveRent - calc.operatingCosts - pmt - monthlyTax;
-                return { rate: r, cf, delta };
-              });
-              return (
-                <Card>
-                  <div className="flex justify-between items-center mb-1">
-                    <h3 className="font-semibold text-white">Rentestress-test</h3>
-                    <span className="text-xs text-slate-500">Hva tåler du?</span>
-                  </div>
-                  <p className="text-xs text-slate-500 mb-4">Månedlig kontantstrøm ved endret rente</p>
-                  <div className="grid grid-cols-4 gap-3">
-                    {scenarios.map(s => (
-                      <div key={s.delta} className="flex flex-col gap-1 p-3 rounded-xl text-center"
-                        style={{ background: s.delta === 0 ? 'rgba(59,130,246,0.12)' : 'rgba(0,0,0,0.2)', border: s.delta === 0 ? '1px solid rgba(59,130,246,0.35)' : '1px solid rgba(255,255,255,0.06)' }}>
-                        <span className="text-xs text-slate-400">{s.delta === 0 ? 'I dag' : `${s.delta > 0 ? '+' : ''}${s.delta} %`}</span>
-                        <span className="text-sm font-bold text-white">{s.rate.toFixed(2).replace('.', ',')} %</span>
-                        <span className={`text-sm font-bold ${s.cf >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                          {s.cf >= 0 ? '+' : ''}{fmt(s.cf)} kr
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </Card>
-              );
-            })()}
-
-          </div>
-
-          {/* ── RIGHT: RESULTS (sticky) ── */}
-          <div className="lg:sticky lg:top-24 flex flex-col gap-4">
-            {!calc ? (
-              <Card>
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="font-semibold text-white">Eksempel</h3>
-                  <span className="text-xs px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-300 font-medium">Demo</span>
-                </div>
-                <p className="text-xs text-slate-500 mb-4">Bergen, 60 m², 2-roms, 3,2 mill. kr, 30 % EK</p>
-                <div className="text-center mb-5 p-4 rounded-xl" style={{ background: 'rgba(0,0,0,0.2)' }}>
-                  <p className="text-xs text-slate-400 mb-1 uppercase tracking-wider">Månedlig kontantstrøm</p>
-                  <p className="text-4xl font-black text-emerald-400">+1 080 kr</p>
-                  <p className="text-xs text-slate-500 mt-1">Netto (etter alle utgifter)</p>
-                </div>
-                <div>
-                  <p className="text-xs text-slate-500 uppercase tracking-wider mb-2">Nøkkeltall</p>
-                  <SRow label="Yield (netto)" value="4,8 %" />
-                  <SRow label="ROI (netto)" value="7,2 %" color="text-emerald-400" />
-                  <SRow label="Årlig kontantstrøm" value="+12 960 kr" color="text-emerald-400" />
-                </div>
-                <p className="text-xs text-slate-500 mt-5 text-center">↑ Fyll inn kjøpssum for å regne ditt eget case</p>
-              </Card>
-            ) : (
-              <Card>
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="font-semibold text-white">Resultat</h3>
-                  <span className="text-xs text-slate-500">Oppsummering</span>
-                </div>
-                <div className="text-center mb-5 p-4 rounded-xl" style={{ background: 'rgba(0,0,0,0.2)' }}>
-                  <p className="text-xs text-slate-400 mb-1 uppercase tracking-wider">Månedlig kontantstrøm</p>
-                  <p className={`text-2xl sm:text-3xl font-black break-words ${isPos ? 'text-emerald-400' : 'text-red-400'}`}>
-                    {isPos ? '+' : ''}{fmt(calc.afterTaxCF)} kr
-                  </p>
-                  <p className="text-xs text-slate-500 mt-1">Netto (etter alle utgifter)</p>
-                </div>
-                {/* Breakdown — slik blir kontantstrømmen */}
-                <div className="mb-5">
-                  <p className="text-xs text-slate-500 uppercase tracking-wider mb-2">Slik blir kontantstrømmen (pr. mnd)</p>
-                  <SRow label="+ Leieinntekt" value={`${fmt(calc.effectiveRent)} kr`} color="text-emerald-400" />
-                  <SRow label="− Driftskostnader" value={`−${fmt(calc.operatingCosts)} kr`} color="text-red-400" />
-                  <SRow label="− Renter" value={`−${fmt(calc.monthlyInterest)} kr`} color="text-red-400" />
-                  <SRow label="− Avdrag" value={`−${fmt(calc.monthlyPrincipal)} kr`} color="text-red-400" />
-                  <SRow label="− Skatt (22 %)" value={`−${fmt(calc.monthlyTax)} kr`} color="text-red-400" />
-                </div>
-
-                <div>
-                  <p className="text-xs text-slate-500 uppercase tracking-wider mb-2">Nøkkeltall</p>
-                  <SRow label="Årlig kontantstrøm"
-                    value={`${calc.arligNettofortjeneste >= 0 ? '+' : ''}${fmt(calc.arligNettofortjeneste)} kr`}
-                    color={calc.arligNettofortjeneste >= 0 ? 'text-emerald-400' : 'text-red-400'} />
-                  <SRow label="Yield (netto)" value={`${calc.nettoYield} %`} />
-                  <SRow label="ROI (netto)" value={`${calc.roi} %`}
-                    color={calc.roi > 0 ? 'text-emerald-400' : 'text-red-400'} />
-                  <SRow label="Utgifter i året" value={`${fmt(calc.operatingCosts * 12)} kr`} />
-                </div>
-                <div className="mt-5 flex flex-col gap-2">
-                  <button
-                    onClick={() => {
-                      const defaultName = form.adresse || `Bolig ${new Date().toLocaleDateString('nb-NO')}`;
-                      const name = window.prompt('Navn på boligen:', defaultName);
-                      if (!name) return;
-                      const price = parseInt(form.prisantydning.replace(/\D/g, '')) || 0;
-                      saveProperty({
-                        id: newId(),
-                        name: name.trim(),
-                        savedAt: Date.now(),
-                        form,
-                        avdragsfrihet,
-                        snapshot: {
-                          price,
-                          afterTaxCF: calc.afterTaxCF,
-                          arligNettofortjeneste: calc.arligNettofortjeneste,
-                          nettoYield: calc.nettoYield,
-                          roi: calc.roi,
-                          equity: calc.equity,
-                          loan: calc.loan,
-                        },
-                      });
-                      setSaveMsg('✓ Lagret');
-                      setTimeout(() => setSaveMsg(''), 2000);
-                    }}
-                    className="w-full py-2.5 rounded-xl text-sm font-semibold text-white transition-all hover:opacity-90"
-                    style={{ background: '#2563eb' }}>
-                    Lagre til Mine boliger
-                  </button>
-                  {saveMsg && <p className="text-emerald-400 text-xs text-center font-medium">{saveMsg} — <Link href="/mine-boliger" className="underline">se mine boliger</Link></p>}
-                  <Link href="/mine-boliger" className="text-center text-xs text-slate-400 hover:text-blue-300 transition-colors">
-                    Sammenlign med tidligere lagrede →
-                  </Link>
-                </div>
-              </Card>
-            )}
-          </div>
-
-        </div>
-      </div>
-
-      {/* Guider */}
-      <section className="px-6 py-16 max-w-5xl mx-auto">
-        <h2 className="text-2xl font-bold text-white mb-2 text-center">Guider for utleieinvestorer</h2>
-        <p className="text-slate-400 text-sm text-center mb-8">Det viktigste du må vite før du kjøper utleiebolig</p>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {[
-            { href: '/lonner-det-seg-a-leie-ut', tag: 'Lønnsomhet', title: 'Lønner det seg å leie ut bolig?', desc: 'Yield, kontantstrøm og når utleie faktisk gir penger i lommen.' },
-            { href: '/skatt-leieinntekter',     tag: 'Skatt',      title: 'Skatt på leieinntekter', desc: 'Skattefri utleie, 22 %-regelen og rentefradraget forklart.' },
-            { href: '/egenkapital-utleiebolig', tag: 'Finansiering', title: 'Hvor mye egenkapital trenger du?', desc: '40 %-regelen, omkostninger og hvordan komme rundt kravet.' },
-          ].map(g => (
-            <Link key={g.href} href={g.href} className="rounded-2xl p-6 transition-all hover:bg-white/5 flex flex-col" style={cardStyle}>
-              <p className="text-blue-400 text-xs font-semibold uppercase tracking-wider mb-3">{g.tag}</p>
-              <h3 className="font-bold text-white text-lg mb-2 leading-snug">{g.title}</h3>
-              <p className="text-sm text-slate-400 leading-relaxed flex-1">{g.desc}</p>
-              <p className="text-sm text-blue-400 font-semibold mt-4">Les mer →</p>
-            </Link>
-          ))}
-        </div>
-      </section>
-
-      {/* FAQ */}
-      <section className="px-6 py-16 max-w-3xl mx-auto">
-        <h2 className="text-2xl font-bold text-white mb-8 text-center">Vanlige spørsmål om utleiebolig</h2>
-        <div className="flex flex-col gap-4">
-          {[
-            { q: 'Hva er brutto yield på utleiebolig?', a: 'Brutto yield er den årlige leieinntekten delt på kjøpesummen, oppgitt i prosent. En bolig til 3 millioner kroner med 15 000 kr i månedlig leie gir en brutto yield på 6 %. I Norge regnes 5 % eller mer som et godt utgangspunkt.' },
-            { q: 'Hva er rentefradrag og hvor mye sparer jeg?', a: 'Når du leier ut bolig, kan du trekke fra renteutgiftene på skatten. Staten dekker 22 % av rentekostnadene dine. Har du 10 000 kr i månedlige renter, sparer du 26 400 kr i året — penger som kommer tilbake som skatteoppgjør.' },
-            { q: 'Hva er forskjellen på annuitetslån og serielån?', a: 'Annuitetslån har fast månedlig betaling — mer renter i starten, mer avdrag mot slutten. Serielån har fast avdrag og synkende renter, noe som gir høyere betaling i starten men lavere totalkostnad over tid.' },
-            { q: 'Hva betyr antall måneder utleid?', a: 'Antall måneder utleid per år lar deg justere for perioder boligen står tom. 12 måneder betyr full utleie. 11 måneder tilsvarer ca. 8 % ledighet — omtrent 2 uker per halvår.' },
-            { q: 'Kan jeg bruke kalkulatoren på Finn.no-annonser?', a: 'Ja! Lim inn en Finn.no-lenke øverst, trykk «Hent fra FINN», og alle tall hentes automatisk. Du kan justere tallene manuelt etterpå.' },
-          ].map(({ q, a }) => (
-            <div key={q} className="rounded-2xl p-5" style={cardStyle}>
-              <h3 className="font-semibold text-white mb-2 text-sm">{q}</h3>
-              <p className="text-sm text-slate-400 leading-relaxed">{a}</p>
             </div>
           ))}
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="px-6 py-8 text-center" style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-        <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 text-xs text-slate-500 mb-3">
-          <Link href="/slik-beregnes-det" className="hover:text-blue-300 transition-colors">Slik beregnes det</Link>
-          <Link href="/personvern" className="hover:text-blue-300 transition-colors">Personvern</Link>
-          <Link href="/lonner-det-seg-a-leie-ut" className="hover:text-blue-300 transition-colors">Lønnsomhet</Link>
-          <Link href="/skatt-leieinntekter" className="hover:text-blue-300 transition-colors">Skatt</Link>
-          <Link href="/egenkapital-utleiebolig" className="hover:text-blue-300 transition-colors">Egenkapital</Link>
+      {/* Alt du trenger før budrunden */}
+      <section className="px-4 py-20 max-w-6xl mx-auto">
+        <div className="text-center mb-12">
+          <h2 className="text-3xl sm:text-4xl font-black mb-3">Alt du trenger før budrunden</h2>
+          <p className="text-slate-500 max-w-2xl mx-auto leading-relaxed">
+            Fra én Finn-lenke får du både risikobildet i salgsoppgaven og de økonomiske tallene. Helt gratis.
+          </p>
         </div>
-        <p className="text-xs text-slate-400">
-          © {new Date().getFullYear()} Utleiekalkulator · Leiepriser fra hybel.no · Ikke finansiell rådgivning
-        </p>
-      </footer>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          {[
+            { icon: '🔍', title: 'TG1, TG2 og TG3-funn', body: 'AI leser salgsoppgaven og henter ut alle avvik som krever oppfølging.', link: '/analyse' },
+            { icon: '❓', title: 'Spør megler-liste', body: 'Konkrete spørsmål du bør stille megler om hvert funn, klare til visning.', link: '/analyse' },
+            { icon: '📊', title: 'Yield og kontantstrøm', body: 'Brutto og netto avkastning, og hva du sitter igjen med per måned.', link: '/kalkulator' },
+            { icon: '⚖️', title: 'Skatt og rentefradrag', body: '22 % kapitalskatt og rentefradrag regnet riktig for 2026.', link: '/skatt-leieinntekter' },
+          ].map((f, i) => (
+            <div key={i} className="rounded-2xl p-5" style={card}>
+              <div className="text-2xl mb-3">{f.icon}</div>
+              <h3 className="font-bold text-base mb-2">{f.title}</h3>
+              <p className="text-sm text-slate-500 leading-relaxed mb-3">{f.body}</p>
+              <Link href={f.link} className="text-sm text-blue-600 hover:text-blue-700 font-semibold">
+                Les mer →
+              </Link>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Hvorfor analysere — text blocks */}
+      <section className="px-4 py-20 max-w-4xl mx-auto">
+        <div className="text-center mb-12">
+          <h2 className="text-2xl sm:text-3xl font-black mb-3">Hvorfor analysere før du kjøper?</h2>
+          <p className="text-slate-500 leading-relaxed">
+            De fleste boligkjøp feiler på detaljer som gjemmer seg i en 60-siders salgsoppgave. Vi gjør jobben på 30 sekunder.
+          </p>
+        </div>
+        <div className="grid sm:grid-cols-2 gap-x-12 gap-y-8">
+          {[
+            { h: 'Avdekker skjult risiko', p: 'AI leser hele salgsoppgaven og løfter frem TG2- og TG3-avvik du ellers kan overse.' },
+            { h: 'Forberedt til visning', p: 'Du får en ferdig liste med spørsmål å stille megler om akkurat denne boligen.' },
+            { h: 'Tall fra Finn på sekunder', p: 'Lim inn lenken — vi henter pris, areal, fellesutgifter og regner yield og kontantstrøm.' },
+            { h: 'Helt gratis, ingen login', p: 'Du eier dataene. Vi lagrer ingenting på server — alt skjer i din egen nettleser.' },
+          ].map((b, i) => (
+            <div key={i}>
+              <h3 className="font-bold text-base mb-2">{b.h}</h3>
+              <p className="text-sm text-slate-500 leading-relaxed">{b.p}</p>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-14 text-center">
+          <Link href="/analyse" className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl font-bold text-white transition-transform hover:scale-[1.02]"
+            style={{ background: 'linear-gradient(135deg, #2563eb, #1d4ed8)', ...blueGlow }}>
+            Start analyse <span>→</span>
+          </Link>
+        </div>
+      </section>
     </div>
   );
 }
