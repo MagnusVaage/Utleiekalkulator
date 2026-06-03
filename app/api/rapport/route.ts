@@ -81,12 +81,13 @@ function keyOf(s: string): string {
 }
 
 // Groq counts (input + max_tokens) against each model's per-minute limit (TPM),
-// and the limits differ a lot. We slice the input down to fit each model's cap
-// (~3.5 chars/token, leaving room for the prompt and the 2500-token output).
+// and the limits differ a lot. The whole request — system prompt (~1.4k tokens),
+// user input (~3.5 chars/token) AND the reserved max_tokens output — must fit under
+// the cap, so we size BOTH input and output per model to stay safely below TPM.
 const MODELS = [
-  { name: 'llama-3.3-70b-versatile', inputChars: 20_000 }, // TPM 12k
-  { name: 'openai/gpt-oss-120b', inputChars: 12_000 }, // TPM 8k
-  { name: 'llama-3.1-8b-instant', inputChars: 7_500 }, // TPM 6k
+  { name: 'llama-3.3-70b-versatile', inputChars: 18_000, maxTokens: 2500 }, // TPM 12k
+  { name: 'openai/gpt-oss-120b', inputChars: 10_000, maxTokens: 2200 }, // TPM 8k
+  { name: 'llama-3.1-8b-instant', inputChars: 5_500, maxTokens: 1800 }, // TPM 6k
 ];
 
 export async function POST(request: Request) {
@@ -132,7 +133,7 @@ export async function POST(request: Request) {
               { role: 'user', content: `---RAPPORT START---\n${input.slice(0, model.inputChars)}\n---RAPPORT SLUTT---` },
             ],
             temperature: 0.2,
-            max_tokens: 2500,
+            max_tokens: model.maxTokens,
             response_format: { type: 'json_object' },
           }),
           signal: ctrl.signal,
