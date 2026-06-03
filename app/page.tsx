@@ -17,11 +17,6 @@ const SAMPLE = [
 export default function Page() {
   const [url, setUrl] = useState('');
 
-  const goAnalyse = () => {
-    if (!url.trim()) return;
-    window.location.href = `/analyse?finn=${encodeURIComponent(url.trim())}`;
-  };
-
   return (
     <div className="min-h-screen text-slate-900" style={{ background: '#f7f8fa' }}>
       {/* Header — pill nav */}
@@ -64,23 +59,23 @@ export default function Page() {
           </p>
 
           {/* CTA card */}
-          <div className="rounded-2xl p-2 mx-auto max-w-2xl" style={blueGlow}>
+          <form action="/analyse" method="get" className="rounded-2xl p-2 mx-auto max-w-2xl" style={blueGlow}>
             <div className="rounded-xl flex flex-col sm:flex-row items-stretch gap-2 p-2"
               style={{ background: '#ffffff', border: '1px solid rgba(37,99,235,0.25)' }}>
               <div className="flex-1 text-left px-3 py-2">
                 <p className="text-xs text-blue-600 font-semibold uppercase tracking-wider">Bolig-annonse</p>
-                <input value={url} onChange={e => setUrl(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && goAnalyse()}
+                <input name="finn" value={url} onChange={e => setUrl(e.target.value)}
+                  required
                   placeholder="Lim inn Finn-lenke…"
                   className="w-full bg-transparent outline-none text-base text-slate-900 placeholder-slate-400 mt-0.5" />
               </div>
-              <button onClick={goAnalyse}
+              <button type="submit"
                 className="px-6 py-3 rounded-xl font-bold text-white whitespace-nowrap flex items-center justify-center gap-2 transition-transform hover:scale-[1.02]"
                 style={{ background: 'linear-gradient(135deg, #2563eb, #1d4ed8)' }}>
                 Analyser bolig <span>→</span>
               </button>
             </div>
-          </div>
+          </form>
           <p className="text-xs text-slate-500 mt-4 max-w-xl mx-auto leading-relaxed">
             Du kan også <Link href="/analyse" className="text-blue-600 hover:text-blue-700 underline">laste opp salgsoppgaven (PDF)</Link> direkte.
             Verktøyet er et støtteverktøy og erstatter ikke profesjonell rådgivning — alle beslutninger må baseres på egen research.
