@@ -119,7 +119,11 @@ export default function Page() {
           <li><strong className="text-white">TG2</strong> — vesentlig avvik. Tiltak kan bli nødvendig, men ikke akutt.</li>
           <li><strong className="text-white">TG3</strong> — stort eller alvorlig avvik. Strakstiltak eller utbedring er nødvendig.</li>
         </ul>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+          <Link href="/hva-betyr-tg1" className="rounded-xl p-5 transition-all hover:bg-white/5" style={cardStyle}>
+            <p className="text-blue-400 text-xs font-semibold uppercase tracking-wider mb-2">Dypdykk</p>
+            <p className="font-semibold text-white">Hva betyr TG1? →</p>
+          </Link>
           <Link href="/hva-betyr-tg2" className="rounded-xl p-5 transition-all hover:bg-white/5" style={cardStyle}>
             <p className="text-blue-400 text-xs font-semibold uppercase tracking-wider mb-2">Dypdykk</p>
             <p className="font-semibold text-white">Hva betyr TG2? →</p>
