@@ -149,6 +149,38 @@ const MEGLER_DOMAINS = [
   'webmegler.no', 'meglervisning.no', 'partners.no', 'inviso.no', 'z-eiendom.no',
 ];
 
+// DNB Eiendom (Norway's largest) serves a fully digital salgsoppgave — the
+// "autoprospekt" page — with the complete tilstandsrapport text inline and NO
+// downloadable PDF. We strip that page to plain text instead of hunting for a PDF.
+function htmlToText(html: string): string {
+  return html
+    .replace(/\\u002[fF]/gi, '/')
+    .replace(/\\r\\n|\\r|\\n/g, '\n')
+    // Keep <script> content: DNB's digital salgsoppgave text lives inside the SPA's
+    // inline JSON state, not in the HTML body. Only drop <style> (pure CSS noise).
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+    .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(Number(n)))
+    .replace(/&[a-z]+;/gi, ' ')
+    .replace(/[ \t]+/g, ' ')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
+async function resolveDnbText(link: string): Promise<string | undefined> {
+  // The estate id is the first 6-9 digit run in the link's path (the path may be
+  // /307260089, /bolig/307260089 or /Autoprospekt/307260089 depending on the CTA).
+  const id = link.match(/dnbeiendom\.no\/[^?#]*?(\d{6,9})/i)?.[1];
+  if (!id) return undefined;
+  const res = await fetch(`https://dnbeiendom.no/autoprospekt/${id}`, {
+    headers: HEADERS, redirect: 'follow', next: { revalidate: 0 },
+  });
+  if (!res.ok) return undefined;
+  const text = htmlToText(await res.text());
+  return text.replace(/\s/g, '').length > 2000 ? text : undefined;
+}
+
 async function findMeglerLink(finnUrl: string): Promise<{ link?: string; estateId?: string }> {
   const res = await fetch(finnUrl, { headers: HEADERS, next: { revalidate: 0 } });
   if (!res.ok) return {};
@@ -191,6 +223,12 @@ export async function GET(request: Request) {
     if (!link) return Response.json({ found: false, reason: 'no-megler-link' }, { status: 200 });
 
     const megler = new URL(link).hostname.replace(/^www\./, '');
+
+    // DNB: no PDF exists — pull the salgsoppgave text from the digital autoprospekt page.
+    if (megler.includes('dnbeiendom.no')) {
+      const text = await resolveDnbText(link);
+      if (text) return Response.json({ found: true, megler, pdfUrl: '', text: text.slice(0, 200_000) });
+    }
 
     // Resolve PDF url — the link is either a direct PDF or a megler prospekt page
     let pdfUrl: string | undefined;
