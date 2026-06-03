@@ -59,7 +59,7 @@ export default function Page() {
             <span className="text-blue-600">før du byr</span>
           </h1>
           <p className="text-lg sm:text-xl text-slate-500 leading-relaxed mb-10 max-w-2xl mx-auto">
-            Lim inn en Finn-lenke. Vi avdekker risiko i salgsoppgaven (TG2/TG3), gir deg spørsmål å stille megler,
+            Lim inn en Finn-lenke. Vi avdekker risiko i salgsoppgaven (TG1/TG2/TG3), gir deg spørsmål å stille megler,
             og regner yield og kontantstrøm — alt på sekunder.
           </p>
 

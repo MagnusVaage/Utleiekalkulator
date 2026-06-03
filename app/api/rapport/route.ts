@@ -73,30 +73,40 @@ export async function POST(request: Request) {
     ? snippets.join('\n---\n')
     : text.slice(0, 10_000);
 
-  try {
-    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
-        messages: [
-          { role: 'system', content: PROMPT },
-          { role: 'user', content: `---RAPPORT START---\n${truncated}\n---RAPPORT SLUTT---` },
-        ],
-        temperature: 0.2,
-        max_tokens: 8000,
-      }),
-    });
+  // Each model has its own daily token budget — if the primary is rate-limited,
+  // fall back to the next one so a single model's cap can't block analysis.
+  const MODELS = ['llama-3.3-70b-versatile', 'openai/gpt-oss-120b', 'llama-3.1-8b-instant'];
 
-    if (!res.ok) {
-      const err = await res.text();
-      throw new Error(`Groq svarte med feil: ${res.status} — ${err.slice(0, 200)}`);
+  try {
+    let data: { choices?: { message?: { content?: string } }[] } | null = null;
+    let lastErr = '';
+    for (const model of MODELS) {
+      const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model,
+          messages: [
+            { role: 'system', content: PROMPT },
+            { role: 'user', content: `---RAPPORT START---\n${truncated}\n---RAPPORT SLUTT---` },
+          ],
+          temperature: 0.2,
+          max_tokens: 4000,
+        }),
+      });
+
+      if (res.ok) { data = await res.json(); break; }
+
+      lastErr = `${res.status} — ${(await res.text()).slice(0, 200)}`;
+      if (res.status === 429) continue; // rate-limited: try next model
+      break; // other errors won't be fixed by switching model
     }
 
-    const data = await res.json();
+    if (!data) throw new Error(`Groq svarte med feil: ${lastErr}`);
+
     const raw = data?.choices?.[0]?.message?.content ?? '';
     const jsonMatch = raw.match(/\{[\s\S]*\}/);
     if (!jsonMatch) throw new Error('Kunne ikke tolke AI-svaret');
