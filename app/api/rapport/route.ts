@@ -160,6 +160,24 @@ export async function POST(request: Request) {
 
     const parsed = JSON.parse(jsonMatch[0]);
 
+    // Defence-in-depth against fabricated content: the model can occasionally invent
+    // a feature (a fireplace, a balcony) that isn't in the report. Drop any finding,
+    // strength or risk whose substantive words (6+ letters, e.g. "drenering",
+    // "balkongdør") appear NOWHERE in the source text. Phrases without any long word
+    // can't be verified, so we keep them rather than risk removing a real finding.
+    const src = text.toLowerCase();
+    const STOP = new Set(['boligen', 'rapporten', 'vurdert', 'tilstand', 'generelt', 'normalt']);
+    const groundedIn = (phrase: string): boolean => {
+      const words = (phrase.toLowerCase().match(/[a-zæøå]{6,}/g) ?? []).filter((w) => !STOP.has(w));
+      return words.length === 0 || words.some((w) => src.includes(w));
+    };
+    if (Array.isArray(parsed.tg)) {
+      parsed.tg = parsed.tg.filter((t: { kategori?: string; beskrivelse?: string }) =>
+        groundedIn(`${t.kategori ?? ''} ${t.beskrivelse ?? ''}`));
+    }
+    if (Array.isArray(parsed.positive)) parsed.positive = parsed.positive.filter((p: string) => groundedIn(p));
+    if (Array.isArray(parsed.negative)) parsed.negative = parsed.negative.filter((n: string) => groundedIn(n));
+
     cache.set(key, { at: Date.now(), data: parsed });
     if (cache.size > 200) cache.delete(cache.keys().next().value as string);
 
