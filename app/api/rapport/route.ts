@@ -37,7 +37,7 @@ Regler for TG-gradering:
 // tilstandsrapporter use standardised section labels, so we anchor on those
 // instead of the raw "TG" badge (which is often a non-extractable icon).
 function buildInput(text: string): string {
-  const MAX = 24_000; // ~7k tokens — leaves room for output under Groq's 12k TPM
+  const MAX = 20_000; // sliced down per-model below to fit each model's TPM cap
   const anchor = /(tilstandsgrad|vurderte forhold|vurdering av avvik|konsekvens\s*\/?\s*tiltak|\bTG\s?[0-3]\b|\bTG\s?IU\b)/gi;
 
   const seen = new Set<number>();
@@ -80,7 +80,14 @@ function keyOf(s: string): string {
   return `${h}:${s.length}`;
 }
 
-const MODELS = ['llama-3.3-70b-versatile', 'openai/gpt-oss-120b', 'llama-3.1-8b-instant'];
+// Groq counts (input + max_tokens) against each model's per-minute limit (TPM),
+// and the limits differ a lot. We slice the input down to fit each model's cap
+// (~3.5 chars/token, leaving room for the prompt and the 2500-token output).
+const MODELS = [
+  { name: 'llama-3.3-70b-versatile', inputChars: 20_000 }, // TPM 12k
+  { name: 'openai/gpt-oss-120b', inputChars: 12_000 }, // TPM 8k
+  { name: 'llama-3.1-8b-instant', inputChars: 7_500 }, // TPM 6k
+];
 
 export async function POST(request: Request) {
   const apiKey = process.env.GROQ_API_KEY;
@@ -119,19 +126,19 @@ export async function POST(request: Request) {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
           body: JSON.stringify({
-            model,
+            model: model.name,
             messages: [
               { role: 'system', content: PROMPT },
-              { role: 'user', content: `---RAPPORT START---\n${input}\n---RAPPORT SLUTT---` },
+              { role: 'user', content: `---RAPPORT START---\n${input.slice(0, model.inputChars)}\n---RAPPORT SLUTT---` },
             ],
             temperature: 0.2,
-            max_tokens: 3000,
+            max_tokens: 2500,
             response_format: { type: 'json_object' },
           }),
           signal: ctrl.signal,
         });
       } catch {
-        lastErr = `${model}: tidsavbrudd/nettverksfeil`;
+        lastErr = `${model.name}: tidsavbrudd/nettverksfeil`;
         continue; // try next model
       } finally {
         clearTimeout(t);
@@ -140,7 +147,7 @@ export async function POST(request: Request) {
       if (res.ok) { data = await res.json(); break; }
 
       lastErr = `${res.status} — ${(await res.text()).slice(0, 200)}`;
-      if (res.status === 429) continue; // rate-limited: try next model
+      if (res.status === 429 || res.status === 413) continue; // rate-limited / too large: try smaller model
       break; // other errors won't be fixed by switching model
     }
 
