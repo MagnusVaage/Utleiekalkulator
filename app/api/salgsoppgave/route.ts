@@ -139,6 +139,16 @@ async function resolvePrivatMegleren(link: string): Promise<string | undefined> 
   return ranked[0]?.url;
 }
 
+// The major Norwegian brokerage domains. Used as a last-resort way to locate the
+// megler's listing page when Finn doesn't expose an explicit "salgsoppgave" link.
+const MEGLER_DOMAINS = [
+  'dnbeiendom.no', 'em1.no', 'eiendomsmegler1.no', 'krogsveen.no', 'privatmegleren.no',
+  'aktiv.no', 'nordvikbolig.no', 'nordvik.no', 'eie.no', 'notar.no', 'garanti.no',
+  'proaktiv.no', 'semogjohnsen.no', 'schala-partners.no', 'fossco.no', 'foss.no',
+  'heimdaleiendom.no', 'sormegleren.no', 'exbo.no', 'meglerhuset-nylander.no',
+  'webmegler.no', 'meglervisning.no', 'partners.no', 'inviso.no', 'z-eiendom.no',
+];
+
 async function findMeglerLink(finnUrl: string): Promise<{ link?: string; estateId?: string }> {
   const res = await fetch(finnUrl, { headers: HEADERS, next: { revalidate: 0 } });
   if (!res.ok) return {};
@@ -150,6 +160,15 @@ async function findMeglerLink(finnUrl: string): Promise<{ link?: string; estateI
   if (!link) {
     const m2 = html.match(/href="(https?:\/\/[^"]*(?:prospekt|salgsoppgave)[^"]*)"/i);
     if (m2) link = m2[1];
+  }
+  // Last resort: any external link to a known megler domain (DNB, EM1, Nordvik, Eie, …).
+  // Finn always links out to the broker's own listing page, which hosts the salgsoppgave.
+  if (!link) {
+    const hrefs = html.match(/href="(https?:\/\/[^"]+)"/gi) ?? [];
+    for (const h of hrefs) {
+      const url = h.slice(6, -1);
+      if (MEGLER_DOMAINS.some((d) => url.toLowerCase().includes(d))) { link = url; break; }
+    }
   }
   if (link) link = link.replace(/&amp;/g, '&');
 
@@ -186,6 +205,10 @@ export async function GET(request: Request) {
         const docs = collectDocs(html, estateId);
         if (docs.length && docs[0].score > 0) pdfUrl = docs[0].url;
         if (!pdfUrl) pdfUrl = extractEpaperUrl(html);
+        // Relaxed fallback: hashed filenames (no label, no keyword) score 0 even when
+        // they ARE the salgsoppgave. If nothing scored positive and no epaper, take the
+        // best-ranked PDF that isn't a clearly-wrong document (negative score).
+        if (!pdfUrl && docs.length && docs[0].score >= 0) pdfUrl = docs[0].url;
       }
     }
 
