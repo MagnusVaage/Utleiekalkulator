@@ -14,13 +14,15 @@ export async function POST(request: Request) {
     return Response.json({ error: 'Ugyldig forespørsel' }, { status: 400 });
   }
 
+  const telefon = String(body.telefon ?? '').trim();
   const adresse = String(body.adresse ?? '').trim();
-  if (!adresse) {
-    return Response.json({ error: 'Adresse er påkrevd' }, { status: 400 });
+  if (!telefon || !adresse) {
+    return Response.json({ error: 'Telefon og adresse er påkrevd' }, { status: 400 });
   }
 
   const row = {
     tidspunkt: new Date().toISOString(),
+    telefon,
     adresse,
     kontekstAdresse: String(body.kontekstAdresse ?? '').trim(),
     kontekstFinn: String(body.kontekstFinn ?? '').trim(),
