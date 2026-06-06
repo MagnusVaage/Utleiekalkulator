@@ -59,8 +59,14 @@ export default function LeadCard({ variant, finn, kontekstAdresse }: { variant: 
   }
 
   return (
-    <div className="rounded-2xl p-5" style={cardBg}>
-      <h3 className="font-bold mb-1">{c.title}</h3>
+    <div className="rounded-2xl p-5 relative" style={cardBg}>
+      {open && (
+        <button onClick={() => setOpen(false)} aria-label="Lukk"
+          className="absolute top-3 right-3 w-7 h-7 flex items-center justify-center rounded-full text-slate-400 hover:text-slate-700 hover:bg-black/5 transition-colors text-lg leading-none">
+          ×
+        </button>
+      )}
+      <h3 className="font-bold mb-1 pr-7">{c.title}</h3>
       <p className="text-sm text-slate-600 mb-3">{c.desc}</p>
 
       {!open ? (
