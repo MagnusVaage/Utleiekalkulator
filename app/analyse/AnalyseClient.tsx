@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { saveAnalysis, newId } from '../lib/savedAnalyses';
+import SelgeLead from './SelgeLead';
 
 const fmt = (n: number) => new Intl.NumberFormat('nb-NO').format(Math.round(n));
 const card = { background: '#ffffff', border: '1px solid rgba(15,23,42,0.08)', boxShadow: '0 1px 3px rgba(15,23,42,0.04)' };
@@ -420,11 +421,7 @@ export default function AnalyseClient({ finn, initialMetric, initialRisk, initia
 
             {/* Monetisering placeholders */}
             <div className="grid sm:grid-cols-2 gap-4">
-              <div className="rounded-2xl p-5" style={{ background: 'rgba(37,99,235,0.05)', border: '1px solid rgba(37,99,235,0.18)' }}>
-                <h3 className="font-bold mb-1">Vurderer du å selge?</h3>
-                <p className="text-sm text-slate-600 mb-3">Verdivurdering og meglertilbud kan vi koble deg til — ta kontakt så hjelper vi.</p>
-                <Link href="/om-oss" className="text-sm font-semibold text-blue-600 hover:text-blue-700">Ta kontakt →</Link>
-              </div>
+              <SelgeLead finn={finn} kontekstAdresse={metric?.address ?? ''} />
               <div className="rounded-2xl p-5" style={{ background: 'rgba(37,99,235,0.05)', border: '1px solid rgba(37,99,235,0.18)' }}>
                 <h3 className="font-bold mb-1">Betaler du for mye i rente?</h3>
                 <p className="text-sm text-slate-600 mb-3">Oppdatert boligverdi kan gi bedre betingelser. Dette kan arrangeres — ta kontakt.</p>
