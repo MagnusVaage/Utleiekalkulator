@@ -84,10 +84,14 @@ function keyOf(s: string): string {
 // and the limits differ a lot. The whole request — system prompt (~1.4k tokens),
 // user input (~3.5 chars/token) AND the reserved max_tokens output — must fit under
 // the cap, so we size BOTH input and output per model to stay safely below TPM.
+// maxTokens is sized as high as each model's TPM allows AFTER subtracting the
+// input + system prompt, so a long findings list (old, large homes produce many
+// TG2/TG3) can finish the JSON instead of being truncated mid-object — Groq's
+// strict json_object validator returns 400 json_validate_failed on truncation.
 const MODELS = [
-  { name: 'llama-3.3-70b-versatile', inputChars: 18_000, maxTokens: 2500 }, // TPM 12k
-  { name: 'openai/gpt-oss-120b', inputChars: 10_000, maxTokens: 2200 }, // TPM 8k
-  { name: 'llama-3.1-8b-instant', inputChars: 5_500, maxTokens: 1800 }, // TPM 6k
+  { name: 'llama-3.3-70b-versatile', inputChars: 18_000, maxTokens: 4000 }, // TPM 12k
+  { name: 'openai/gpt-oss-120b', inputChars: 10_000, maxTokens: 3000 }, // TPM 8k
+  { name: 'llama-3.1-8b-instant', inputChars: 5_500, maxTokens: 2200 }, // TPM 6k
 ];
 
 export async function POST(request: Request) {
@@ -147,8 +151,12 @@ export async function POST(request: Request) {
 
       if (res.ok) { data = await res.json(); break; }
 
-      lastErr = `${res.status} — ${(await res.text()).slice(0, 200)}`;
-      if (res.status === 429 || res.status === 413) continue; // rate-limited / too large: try smaller model
+      const errBody = await res.text();
+      lastErr = `${res.status} — ${errBody.slice(0, 200)}`;
+      // Try a smaller model on: rate-limit (429), too-large (413), and truncated/
+      // invalid JSON (400 json_validate_failed) — a smaller input window yields a
+      // shorter completion that is less likely to be cut off mid-object.
+      if (res.status === 429 || res.status === 413 || errBody.includes('json_validate_failed')) continue;
       break; // other errors won't be fixed by switching model
     }
 
