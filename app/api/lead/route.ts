@@ -24,6 +24,7 @@ export async function POST(request: Request) {
     tidspunkt: new Date().toISOString(),
     telefon,
     adresse,
+    kilde: String(body.kilde ?? '').trim(),
     kontekstAdresse: String(body.kontekstAdresse ?? '').trim(),
     kontekstFinn: String(body.kontekstFinn ?? '').trim(),
   };
