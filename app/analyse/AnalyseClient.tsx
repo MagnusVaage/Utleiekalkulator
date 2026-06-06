@@ -228,7 +228,7 @@ export default function AnalyseClient({ finn, initialMetric, initialRisk, initia
             <img src="/logo.svg" alt="" className="w-7 h-7" />
             <span className="font-bold text-sm">Utleiekalkulator</span>
           </Link>
-          <Link href="/" className="text-sm text-slate-600 hover:text-slate-900 transition-colors">+ Ny analyse</Link>
+          <Link href="/" className="text-sm font-semibold text-white px-4 py-2 rounded-lg transition-all hover:bg-blue-500 shadow-sm" style={{ background: '#2563eb' }}>+ Ny analyse</Link>
         </div>
       </header>
 
