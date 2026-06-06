@@ -9,7 +9,7 @@ export default function Loading() {
         </div>
         <p className="font-bold text-slate-900">Analyserer boligen…</p>
         <p className="text-sm text-slate-500 mt-2 leading-relaxed">
-          Henter salgsoppgaven og leser gjennom tilstandsrapporten. Dette tar vanligvis 20–40 sekunder.
+          Henter salgsoppgaven og leser gjennom tilstandsrapporten.
         </p>
         <div className="mt-5 h-1.5 w-full rounded-full overflow-hidden" style={{ background: 'rgba(15,23,42,0.06)' }}>
           <span className="block h-full w-1/3 rounded-full animate-pulse" style={{ background: 'linear-gradient(90deg, #2563eb, #1d4ed8)' }} />
