@@ -20,12 +20,16 @@ export async function POST(request: Request) {
     return Response.json({ error: 'Telefon og adresse er påkrevd' }, { status: 400 });
   }
 
+  // Fold the lead source (selge/rente) into the property field so it shows up in
+  // the existing Sheet column without the owner needing to change the Apps Script.
+  const kilde = String(body.kilde ?? '').trim();
+  const kontekstAdresse = String(body.kontekstAdresse ?? '').trim();
   const row = {
     tidspunkt: new Date().toISOString(),
     telefon,
     adresse,
-    kilde: String(body.kilde ?? '').trim(),
-    kontekstAdresse: String(body.kontekstAdresse ?? '').trim(),
+    kilde,
+    kontekstAdresse: kilde ? `[${kilde}] ${kontekstAdresse}` : kontekstAdresse,
     kontekstFinn: String(body.kontekstFinn ?? '').trim(),
   };
 
