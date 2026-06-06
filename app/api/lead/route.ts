@@ -24,8 +24,15 @@ export async function POST(request: Request) {
   // the existing Sheet column without the owner needing to change the Apps Script.
   const kilde = String(body.kilde ?? '').trim();
   const kontekstAdresse = String(body.kontekstAdresse ?? '').trim();
+  // Norwegian local time, date + hours:minutes only (no seconds, no UTC suffix).
+  const tidspunkt = new Intl.DateTimeFormat('nb-NO', {
+    timeZone: 'Europe/Oslo',
+    day: '2-digit', month: '2-digit', year: 'numeric',
+    hour: '2-digit', minute: '2-digit',
+  }).format(new Date()).replace(',', '');
+
   const row = {
-    tidspunkt: new Date().toISOString(),
+    tidspunkt,
     telefon,
     adresse,
     kilde,
