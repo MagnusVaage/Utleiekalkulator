@@ -21,15 +21,26 @@ export default function Page() {
     if (message.trim().length < 3) {
       setStatus('err'); setErrMsg('Skriv en melding.'); return;
     }
+    if (honey) { setStatus('ok'); return; } // honeypot — stille drop
     setStatus('sending'); setErrMsg('');
     try {
-      const res = await fetch('/api/contact', {
+      // Web3Forms free plan only accepts client-side submissions. The access
+      // key is public (safe in client code) per Web3Forms' own docs.
+      const res = await fetch('https://api.web3forms.com/submit', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, topic, message, honey }),
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({
+          access_key: '202a9343-0ef1-47a2-9c06-104b6dcd87cd',
+          subject: `[Utleiekalkulator] ${topic}`,
+          from_name: 'Utleiekalkulator',
+          name: name || 'Anonym',
+          email: email || 'noreply@utleiekalkulatoren.no',
+          message,
+          botcheck: '',
+        }),
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) { setStatus('err'); setErrMsg(data.error || 'Noe gikk galt.'); return; }
+      if (!res.ok || !data.success) { setStatus('err'); setErrMsg(data.message || 'Noe gikk galt.'); return; }
       setStatus('ok');
       setName(''); setEmail(''); setMessage('');
     } catch {
