@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import GuideMenu from './components/GuideMenu';
 
 const card = { background: '#ffffff', border: '1px solid rgba(15,23,42,0.08)', boxShadow: '0 1px 3px rgba(15,23,42,0.04)' };
 const blueGlow = { boxShadow: '0 10px 40px rgba(37,99,235,0.18), 0 0 0 1px rgba(37,99,235,0.25)' };
@@ -24,6 +25,7 @@ export default function Page() {
         <div className="max-w-6xl mx-auto flex items-center justify-center">
           <div className="flex items-center gap-1 sm:gap-2 rounded-full px-2 py-1.5 flex-wrap justify-center"
             style={{ background: '#ffffff', border: '1px solid rgba(15,23,42,0.08)', boxShadow: '0 1px 3px rgba(15,23,42,0.05)' }}>
+            <GuideMenu />
             <Link href="/" className="flex items-center gap-2 pl-3 pr-4 py-1.5 rounded-full"
               style={{ background: 'rgba(37,99,235,0.08)', border: '1px solid rgba(37,99,235,0.25)' }}>
               <img src="/logo.svg" alt="" className="w-6 h-6" />
