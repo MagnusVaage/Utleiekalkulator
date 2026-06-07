@@ -320,8 +320,23 @@ export default function AnalyseClient({ finn, initialMetric, initialRisk, initia
               {autoMegler && <p className="text-slate-500 text-xs mt-2">Basert på salgsoppgaven hentet fra {autoMegler}.</p>}
             </div>
 
-            {/* Oversiktsrad — tre paneler */}
+            {/* Oversiktsrad — tre paneler (gode nyheter først) */}
             <div className="grid md:grid-cols-3 gap-4">
+              {/* Boligens sterke sider — gode nyheter først */}
+              {risk.positive.length > 0 && (
+                <div className="rounded-2xl p-5" style={card}>
+                  <h3 className="text-sm font-bold text-emerald-700 mb-3">Boligens sterke sider</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {risk.positive.map((p, i) => (
+                      <span key={i} className="text-xs font-medium px-3 py-1.5 rounded-lg text-emerald-700"
+                        style={{ background: 'rgba(5,150,105,0.08)', border: '1px solid rgba(5,150,105,0.22)' }}>
+                        {p}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Fordeling av tilstandsgrader */}
               {counts && (counts[1] + counts[2] + counts[3] > 0) && (
                 <div className="rounded-2xl p-5" style={card}>
@@ -358,20 +373,6 @@ export default function AnalyseClient({ finn, initialMetric, initialRisk, initia
                 </div>
               )}
 
-              {/* Boligens sterke sider */}
-              {risk.positive.length > 0 && (
-                <div className="rounded-2xl p-5" style={card}>
-                  <h3 className="text-sm font-bold text-slate-700 mb-3">Boligens sterke sider</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {risk.positive.map((p, i) => (
-                      <span key={i} className="text-xs font-medium px-3 py-1.5 rounded-lg text-emerald-700"
-                        style={{ background: 'rgba(5,150,105,0.08)', border: '1px solid rgba(5,150,105,0.22)' }}>
-                        {p}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
             </div>
 
             {/* Funn å være obs på — to kolonner */}

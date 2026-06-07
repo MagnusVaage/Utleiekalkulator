@@ -5,7 +5,7 @@ Analyser rapporten nedenfor og returner KUN gyldig JSON (ingen annen tekst, inge
 
 {
   "adresse": "<boligens adresse hentet fra rapporten, eller tom streng>",
-  "sammendrag": "<2-3 setninger om boligens FAKTISKE tilstand basert på rapporten>",
+  "sammendrag": "<2-3 setninger om boligens FAKTISKE tilstand basert på rapporten. Begynn ALLTID med det positive/styrkene ved boligen, og nevn deretter de viktigste avvikene>",
   "tg": [
     {"grad": <0|1|2|3>, "kategori": "<kort frase, 3-6 ord, som navngir avviket OG hvor det gjelder>", "tema": "<ett av temaene under>", "beskrivelse": "<maks 14 ord: hva som faktisk er observert>", "sporsmal": "<ett konkret spørsmål til megler, maks 20 ord; tom streng for TG0>"}
   ],
