@@ -14,16 +14,16 @@ export async function POST(request: Request) {
     return Response.json({ error: 'Ugyldig forespørsel' }, { status: 400 });
   }
 
-  const telefon = String(body.telefon ?? '').trim();
   const adresse = String(body.adresse ?? '').trim();
-  if (!telefon || !adresse) {
-    return Response.json({ error: 'Telefon og adresse er påkrevd' }, { status: 400 });
+  if (!adresse) {
+    return Response.json({ error: 'Adresse er påkrevd' }, { status: 400 });
   }
 
-  // Fold the lead source (selge/rente) into the property field so it shows up in
-  // the existing Sheet column without the owner needing to change the Apps Script.
+  // Human-readable lead type for the Sheet/email.
+  const TYPE_LABEL: Record<string, string> = { selge: 'Salg av bolig', rente: 'Verditakst' };
   const kilde = String(body.kilde ?? '').trim();
-  const kontekstAdresse = String(body.kontekstAdresse ?? '').trim();
+  const type = TYPE_LABEL[kilde] ?? kilde;
+
   // Norwegian local time, date + hours:minutes only (no seconds, no UTC suffix).
   const tidspunkt = new Intl.DateTimeFormat('nb-NO', {
     timeZone: 'Europe/Oslo',
@@ -33,10 +33,9 @@ export async function POST(request: Request) {
 
   const row = {
     tidspunkt,
-    telefon,
+    type,
     adresse,
-    kilde,
-    kontekstAdresse: kilde ? `[${kilde}] ${kontekstAdresse}` : kontekstAdresse,
+    kontekstAdresse: String(body.kontekstAdresse ?? '').trim(),
     kontekstFinn: String(body.kontekstFinn ?? '').trim(),
   };
 

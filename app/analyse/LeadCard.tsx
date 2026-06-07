@@ -26,11 +26,10 @@ const COPY: Record<Variant, { title: string; desc: string; cta: string; disclaim
 export default function LeadCard({ variant, finn, kontekstAdresse }: { variant: Variant; finn: string; kontekstAdresse: string }) {
   const c = COPY[variant];
   const [open, setOpen] = useState(false);
-  const [telefon, setTelefon] = useState('');
   const [adresse, setAdresse] = useState('');
   const [status, setStatus] = useState<'idle' | 'sending' | 'done' | 'error'>('idle');
 
-  const canSubmit = telefon.trim().length > 3 && adresse.trim().length > 3 && status !== 'sending';
+  const canSubmit = adresse.trim().length > 3 && status !== 'sending';
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -40,7 +39,7 @@ export default function LeadCard({ variant, finn, kontekstAdresse }: { variant: 
       const res = await fetch('/api/lead', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ telefon, adresse, kilde: variant, kontekstFinn: finn, kontekstAdresse }),
+        body: JSON.stringify({ adresse, kilde: variant, kontekstFinn: finn, kontekstAdresse }),
       });
       if (!res.ok) throw new Error();
       setStatus('done');
@@ -76,8 +75,6 @@ export default function LeadCard({ variant, finn, kontekstAdresse }: { variant: 
         </button>
       ) : (
         <form onSubmit={submit} className="flex flex-col gap-2.5 mt-1">
-          <input value={telefon} onChange={e => setTelefon(e.target.value)} placeholder="Telefonnummer" type="tel" required
-            className="w-full px-3 py-2 rounded-lg text-sm bg-white" style={inputStyle} />
           <input value={adresse} onChange={e => setAdresse(e.target.value)} placeholder="Adressen din, f.eks. Storgata 1, 0001 Oslo" required
             className="w-full px-3 py-2 rounded-lg text-sm bg-white" style={inputStyle} />
           <button type="submit" disabled={!canSubmit}
