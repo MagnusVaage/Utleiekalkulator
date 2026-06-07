@@ -8,10 +8,10 @@ const card = { background: '#ffffff', border: '1px solid rgba(15,23,42,0.08)', b
 const blueGlow = { boxShadow: '0 10px 40px rgba(37,99,235,0.18), 0 0 0 1px rgba(37,99,235,0.25)' };
 
 const SAMPLE = [
-  { time: '3 min siden', finn: 'https://www.finn.no/realestate/homes/ad.html?finnkode=453423671', addr: 'Thereses gate 35B, Oslo', price: '2 014 650 kr', area: '20 m²', rooms: '1-roms', year: 1923, summary: 'Sjarmerende sentrumsleilighet på Bislett — kort vei til alt.', img: 'https://images.finncdn.no/dynamic/1280w/2026/3/vertical-2/02/1/453/423/671_f29d724c-a494-43be-8ec4-beb6d5090b95.jpg' },
-  { time: '8 min siden', finn: 'https://www.finn.no/realestate/homes/ad.html?finnkode=465628994', addr: 'Platous gate 9 A, Oslo', price: '2 705 057 kr', area: '20 m²', rooms: '1-roms', year: 2000, summary: 'Kompakt og lettstelt leilighet midt i Oslo sentrum.', img: 'https://images.finncdn.no/dynamic/1280w/2026/6/vertical-2/01/4/465/628/994_b2513573-726a-4f77-842e-2bd7aebfccf7.jpg' },
-  { time: '13 min siden', finn: 'https://www.finn.no/realestate/homes/ad.html?finnkode=456630790', addr: 'Waldemar Thranes gate 57, Oslo', price: '2 581 594 kr', area: '20 m²', rooms: '1-roms', year: 2000, summary: 'Praktisk byleilighet ved St. Hanshaugen.', img: 'https://images.finncdn.no/dynamic/1280w/2026/5/vertical-2/29/0/456/630/790_c1043a5f-de55-4f60-b5bf-ef57ca44d670.jpg' },
-  { time: '19 min siden', finn: 'https://www.finn.no/realestate/homes/ad.html?finnkode=458681181', addr: 'Strømsveien 20, Oslo', price: '2 610 536 kr', area: '20 m²', rooms: '1-roms', year: 1933, summary: 'Rimelig leilighet med god beliggenhet øst i sentrum.', img: 'https://images.finncdn.no/dynamic/1280w/2026/4/vertical-2/05/1/458/681/181_8810bbd5-e9c9-489a-a13f-4fb489a09698.jpg' },
+  { finn: 'https://www.finn.no/realestate/homes/ad.html?finnkode=465628994', addr: 'Platous gate 9 A, Oslo', price: '2 705 057 kr', area: '20 m²', rooms: '1-roms', year: 2000, summary: 'Lettstelt sentrumsleilighet på Grønland — alt i gangavstand.', img: 'https://images.finncdn.no/dynamic/1280w/2026/6/vertical-2/01/4/465/628/994_b2513573-726a-4f77-842e-2bd7aebfccf7.jpg' },
+  { finn: 'https://www.finn.no/realestate/homes/ad.html?finnkode=464646754', addr: 'Langes gate 4A, Oslo', price: '3 563 043 kr', area: '21 m²', rooms: '1-roms', year: 1938, summary: 'Sjarmerende leilighet på Bislett i klassisk bygård.', img: 'https://images.finncdn.no/dynamic/1280w/2026/5/vertical-2/25/4/464/646/754_38f52ad1-cdbf-401c-9b15-67e271f3dee1.jpg' },
+  { finn: 'https://www.finn.no/realestate/homes/ad.html?finnkode=463771539', addr: 'Ebbells gate 4C, Oslo', price: '4 161 101 kr', area: '51 m²', rooms: '2-roms', year: 2000, summary: 'Romslig leilighet sentralt i Oslo med god planløsning.', img: 'https://images.finncdn.no/dynamic/1280w/2026/5/vertical-2/18/9/463/771/539_901cad56-dd8b-4b2e-b80f-4e1fc8c9404a.jpg' },
+  { finn: 'https://www.finn.no/realestate/homes/ad.html?finnkode=465232622', addr: 'Sannergata 21A, Oslo', price: '6 272 067 kr', area: '64 m²', rooms: '3-roms', year: 2000, summary: 'Stor og lys leilighet på populære Grünerløkka.', img: 'https://images.finncdn.no/dynamic/1280w/2026/5/vertical-2/29/2/465/232/622_0d962f8b-a27b-4932-a964-f8e38f070cea.jpg' },
 ];
 
 export default function Page() {
@@ -86,15 +86,13 @@ export default function Page() {
 
       {/* Andre analyserte nylig */}
       <section className="px-4 pt-8 pb-16 max-w-6xl mx-auto">
-        <h2 className="text-xl font-bold mb-5">Andre analyserte nylig</h2>
+        <h2 className="text-xl font-bold mb-5">Andre analyserte</h2>
         <div className="flex gap-4 overflow-x-auto pb-4 -mx-4 px-4 snap-x">
           {SAMPLE.map((s, i) => (
             <Link key={i} href={`/analyse?finn=${encodeURIComponent(s.finn)}`}
               className="shrink-0 w-64 rounded-2xl overflow-hidden snap-start block transition-shadow hover:shadow-lg" style={card}>
               <div className="h-40 relative bg-slate-100">
                 <img src={s.img} alt={s.addr} loading="lazy" className="w-full h-full object-cover" />
-                <span className="absolute top-3 left-3 text-xs font-medium px-2 py-1 rounded-md text-slate-700"
-                  style={{ background: 'rgba(255,255,255,0.7)', backdropFilter: 'blur(4px)' }}>{s.time}</span>
               </div>
               <div className="p-4">
                 <p className="font-semibold text-sm truncate">{s.addr}</p>
