@@ -32,13 +32,17 @@ export async function POST(request: Request) {
     hour: '2-digit', minute: '2-digit',
   }).format(new Date()).replace(',', '');
 
+  // The owner's Sheet has 6 columns ending in "Finn-lenke" (the "Så på bolig"
+  // column was removed). The Apps Script writes kontekstAdresse to that 6th
+  // column, so we send the Finn link there and leave the trailing slot empty —
+  // keeps the link aligned under "Finn-lenke" with no Apps Script change.
   const row = {
     tidspunkt,
     type,
     telefon,
     adresse,
-    kontekstAdresse: String(body.kontekstAdresse ?? '').trim(),
-    kontekstFinn: String(body.kontekstFinn ?? '').trim(),
+    kontekstAdresse: String(body.kontekstFinn ?? '').trim(),
+    kontekstFinn: '',
   };
 
   try {
