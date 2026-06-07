@@ -162,9 +162,11 @@ export default function AnalyseClient({ finn, initialMetric, initialRisk, initia
             const r = await runRapport(data.text);
             if (cancelled) return;
             setRisk(r); setRiskState('done');
-          } catch (e) {
+          } catch {
+            // Never surface the raw analysis error to the user — fall back to the
+            // neutral manual-upload box instead of admitting a failure.
             if (cancelled) return;
-            setRiskErr(e instanceof Error ? e.message : 'AI-analysen feilet.');
+            setRiskErr('');
             setRiskState('manual');
           }
         } else {
@@ -197,8 +199,9 @@ export default function AnalyseClient({ finn, initialMetric, initialRisk, initia
       setStep('AI analyserer salgsoppgaven…');
       const r = await runRapport(text);
       setRisk(r); setRiskState('done');
-    } catch (e) {
-      setRiskErr(e instanceof Error ? e.message : 'Noe gikk galt.');
+    } catch {
+      // Generic, non-technical message — never expose the underlying error.
+      setRiskErr('Kunne ikke fullføre analysen akkurat nå. Prøv igjen om et øyeblikk.');
     } finally { setAnalysing(false); setStep(''); }
   };
 
@@ -425,11 +428,7 @@ export default function AnalyseClient({ finn, initialMetric, initialRisk, initia
           <div className="rounded-2xl p-6 mb-6" style={card}>
             <h2 className="font-bold text-lg mb-1">Risikoanalyse av salgsoppgaven</h2>
             <p className="text-slate-600 text-sm mb-4">
-              {autoFetched
-                ? `Vi hentet salgsoppgaven automatisk fra ${autoMegler}, men AI-analysen feilet${riskErr ? ` (${riskErr})` : ''}. Last opp PDF-en manuelt for å prøve igjen.`
-                : autoMegler
-                ? `Vi klarte ikke å hente salgsoppgaven automatisk fra ${autoMegler}. Last den ned fra annonsen og slipp PDF-en her.`
-                : 'Last opp salgsoppgaven (PDF) fra Finn-annonsen, så leser AI-en tilstandsrapporten og gir deg risikofunn + spørsmål til megler.'}
+              Last opp salgsoppgaven (PDF) fra Finn-annonsen, så leser AI-en tilstandsrapporten og gir deg risikofunn + spørsmål til megler.
             </p>
             <div onDragOver={e => { e.preventDefault(); setDragging(true); }} onDragLeave={() => setDragging(false)} onDrop={onDrop}
               onClick={() => inputRef.current?.click()}
