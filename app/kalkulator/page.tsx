@@ -272,6 +272,11 @@ export default function Home() {
                 <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(false)} />
                 <div className="absolute left-0 top-full mt-2 w-64 rounded-xl p-2 z-20 shadow-2xl"
                   style={{ background: '#ffffff', border: '1px solid rgba(15,23,42,0.1)' }}>
+                  <Link href="/" onClick={() => setMenuOpen(false)}
+                    className="block px-3 py-2 rounded-lg text-sm font-bold text-blue-700 hover:bg-blue-500/10 transition-colors">
+                    🔍 Analyser bolig
+                  </Link>
+                  <div className="h-px my-2" style={{ background: 'rgba(15,23,42,0.08)' }} />
                   <p className="text-xs text-slate-500 uppercase tracking-wider px-3 py-2">Guider</p>
                   <Link href="/lonner-det-seg-a-leie-ut" onClick={() => setMenuOpen(false)}
                     className="block px-3 py-2 rounded-lg text-sm font-medium text-amber-700 hover:bg-amber-500/10 transition-colors">

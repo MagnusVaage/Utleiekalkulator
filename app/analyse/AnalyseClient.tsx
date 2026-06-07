@@ -234,14 +234,6 @@ export default function AnalyseClient({ finn, initialMetric, initialRisk, initia
       </header>
 
       <div className="max-w-5xl mx-auto px-4 py-8">
-        {!finn && (
-          <div className="rounded-2xl p-8 text-center" style={card}>
-            <p className="text-slate-500 mb-4">Ingen bolig valgt.</p>
-            <Link href="/" className="inline-block px-5 py-2.5 rounded-xl font-semibold text-white" style={{ background: 'linear-gradient(135deg,#2563eb,#1d4ed8)' }}>
-              Start en analyse
-            </Link>
-          </div>
-        )}
 
         {finn && loadingMeta && (
           <div className="rounded-2xl p-8 text-center" style={card}>
@@ -427,8 +419,8 @@ export default function AnalyseClient({ finn, initialMetric, initialRisk, initia
           </div>
         )}
 
-        {/* ── Manual upload fallback ── */}
-        {riskState === 'manual' && !risk && (
+        {/* ── Manual upload (fallback + standalone when no Finn link) ── */}
+        {(riskState === 'manual' || !finn) && !risk && (
           <div className="rounded-2xl p-6 mb-6" style={card}>
             <h2 className="font-bold text-lg mb-1">Risikoanalyse av salgsoppgaven</h2>
             <p className="text-slate-600 text-sm mb-4">
