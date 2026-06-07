@@ -64,26 +64,28 @@ export default function LeadCard({ variant, finn, kontekstAdresse }: { variant: 
   }
 
   return (
-    <div className="rounded-2xl p-5 relative" style={cardBg}>
+    <div className="rounded-2xl p-6 sm:p-7 relative" style={cardBg}>
       {open && (
         <button onClick={() => setOpen(false)} aria-label="Lukk"
           className="absolute top-3 right-3 w-7 h-7 flex items-center justify-center rounded-full text-slate-400 hover:text-slate-700 hover:bg-black/5 transition-colors text-lg leading-none">
           ×
         </button>
       )}
-      <h3 className="font-bold mb-1 pr-7">{c.title}</h3>
-      <p className="text-sm text-slate-600 mb-3">{c.desc}</p>
+      <h3 className="font-bold text-lg sm:text-xl mb-1 pr-7">{c.title}</h3>
+      <p className="text-sm sm:text-base text-slate-600 mb-4">{c.desc}</p>
 
       {!open ? (
         <button onClick={() => setOpen(true)} className={btnClass} style={btnStyle}>
           {c.cta}
         </button>
       ) : (
-        <form onSubmit={submit} className="flex flex-col gap-2.5 mt-1">
-          <input value={adresse} onChange={e => setAdresse(e.target.value)} placeholder="Postadresse" required
-            className={inputClass} style={inputStyle} />
-          <input value={telefon} onChange={e => setTelefon(e.target.value)} placeholder="Telefonnummer" type="tel" required
-            className={inputClass} style={inputStyle} />
+        <form onSubmit={submit} className="flex flex-col gap-3 mt-1">
+          <div className="grid sm:grid-cols-2 gap-3">
+            <input value={adresse} onChange={e => setAdresse(e.target.value)} placeholder="Postadresse" required
+              className={inputClass} style={inputStyle} />
+            <input value={telefon} onChange={e => setTelefon(e.target.value)} placeholder="Telefonnummer" type="tel" required
+              className={inputClass} style={inputStyle} />
+          </div>
           <button type="submit" disabled={!canSubmit} className={btnClass} style={btnStyle}>
             {status === 'sending' ? 'Sender…' : c.cta}
           </button>

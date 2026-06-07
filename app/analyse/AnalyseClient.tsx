@@ -419,8 +419,8 @@ export default function AnalyseClient({ finn, initialMetric, initialRisk, initia
               </div>
             )}
 
-            {/* Lead-fangst */}
-            <div className="grid sm:grid-cols-2 gap-4">
+            {/* Lead-fangst — stablet i full bredde */}
+            <div className="flex flex-col gap-4">
               <LeadCard variant="selge" finn={finn} kontekstAdresse={metric?.address ?? ''} />
               <LeadCard variant="rente" finn={finn} kontekstAdresse={metric?.address ?? ''} />
             </div>
