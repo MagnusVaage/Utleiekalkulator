@@ -7,14 +7,11 @@ import GuideMenu from './components/GuideMenu';
 const card = { background: '#ffffff', border: '1px solid rgba(15,23,42,0.08)', boxShadow: '0 1px 3px rgba(15,23,42,0.04)' };
 const blueGlow = { boxShadow: '0 10px 40px rgba(37,99,235,0.18), 0 0 0 1px rgba(37,99,235,0.25)' };
 
-const IMG = (id: string) => `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=600&q=70`;
-
 const SAMPLE = [
-  { time: '2 min siden', addr: 'Thorvald Meyers gate 41', price: '4 850 000 kr', area: '52 m²', rooms: '2-roms', year: 1935, summary: 'Lys leilighet på Grünerløkka med oppusset bad og nyere kjøkken.', img: IMG('1502672260266-1c1ef2d93688') },
-  { time: '6 min siden', addr: 'Bygdøy allé 12', price: '8 200 000 kr', area: '78 m²', rooms: '3-roms', year: 1924, summary: 'Klassisk Frogner-leilighet med stukkatur og høyt under taket.', img: IMG('1493809842364-78817add7ffb') },
-  { time: '11 min siden', addr: 'Storgata 36, Trondheim', price: '3 100 000 kr', area: '45 m²', rooms: '2-roms', year: 2008, summary: 'Moderne leilighet sentralt i Trondheim med balkong mot sør.', img: IMG('1522708323590-d24dbb6b0267') },
-  { time: '15 min siden', addr: 'Marken 18, Bergen', price: '4 400 000 kr', area: '61 m²', rooms: '3-roms', year: 1962, summary: 'Romslig leilighet i Bergen sentrum med god utsikt.', img: IMG('1560185007-c5ca9d2c014d') },
-  { time: '22 min siden', addr: 'Kirkegata 9, Stavanger', price: '3 750 000 kr', area: '54 m²', rooms: '2-roms', year: 1998, summary: 'Velholdt leilighet nær sjøen med praktisk planløsning.', img: IMG('1484154218962-a197022b5858') },
+  { time: '3 min siden', finn: 'https://www.finn.no/realestate/homes/ad.html?finnkode=466131833', addr: 'Storgata 49, Molde', price: '1 641 350 kr', area: '22 m²', rooms: '2-roms', year: 1949, summary: 'Praktisk og arealeffektiv leilighet midt i Molde sentrum.', img: 'https://images.finncdn.no/dynamic/1280w/2026/6/vertical-2/06/3/466/131/833_f478f7f4-799f-4772-b52d-1d773beb5088.jpg' },
+  { time: '9 min siden', finn: 'https://www.finn.no/realestate/homes/ad.html?finnkode=463550592', addr: 'Kjernåsveien 5 A, Vestskogen', price: '1 995 379 kr', area: '38 m²', rooms: '2-roms', year: 1968, summary: 'Innflytningsklar leilighet i 1. etasje — perfekt førstegangskjøp.', img: 'https://images.finncdn.no/dynamic/1280w/2026/5/vertical-2/14/2/463/550/592_765d3377-2450-495a-9b26-c12ac36eddf0.jpg' },
+  { time: '14 min siden', finn: 'https://www.finn.no/realestate/homes/ad.html?finnkode=466123765', addr: 'Jahredammen 13, Sandefjord', price: '2 232 098 kr', area: '55 m²', rooms: '3-roms', year: 1962, summary: 'Pen 3-roms med vedovn, vestvendt balkong og parkering.', img: 'https://images.finncdn.no/dynamic/1280w/2026/6/vertical-2/06/5/466/123/765_f739b1f5-bd81-448d-9bc0-6f6f43143ab1.jpg' },
+  { time: '21 min siden', finn: 'https://www.finn.no/realestate/homes/ad.html?finnkode=466073594', addr: 'E.J.Berghs veg 15 B, Hamar', price: '2 384 748 kr', area: '45 m²', rooms: '2-roms', year: 1969, summary: 'Stilig leilighet i 2. etasje med stor vestvendt balkong.', img: 'https://images.finncdn.no/dynamic/1280w/2026/6/vertical-2/05/4/466/073/594_759e84cf-c7ba-4b11-93a6-fd38e7d64670.jpg' },
 ];
 
 export default function Page() {
@@ -92,7 +89,8 @@ export default function Page() {
         <h2 className="text-xl font-bold mb-5">Andre analyserte nylig</h2>
         <div className="flex gap-4 overflow-x-auto pb-4 -mx-4 px-4 snap-x">
           {SAMPLE.map((s, i) => (
-            <div key={i} className="shrink-0 w-64 rounded-2xl overflow-hidden snap-start" style={card}>
+            <Link key={i} href={`/analyse?finn=${encodeURIComponent(s.finn)}`}
+              className="shrink-0 w-64 rounded-2xl overflow-hidden snap-start block transition-shadow hover:shadow-lg" style={card}>
               <div className="h-40 relative bg-slate-100">
                 <img src={s.img} alt={s.addr} loading="lazy" className="w-full h-full object-cover" />
                 <span className="absolute top-3 left-3 text-xs font-medium px-2 py-1 rounded-md text-slate-700"
@@ -112,7 +110,7 @@ export default function Page() {
                 </div>
                 <p className="text-xs text-slate-500 leading-relaxed mt-3">{s.summary}</p>
               </div>
-            </div>
+            </Link>
           ))}
         </div>
       </section>
