@@ -27,9 +27,10 @@ export default function LeadCard({ variant, finn, kontekstAdresse }: { variant: 
   const c = COPY[variant];
   const [open, setOpen] = useState(false);
   const [adresse, setAdresse] = useState('');
+  const [telefon, setTelefon] = useState('');
   const [status, setStatus] = useState<'idle' | 'sending' | 'done' | 'error'>('idle');
 
-  const canSubmit = adresse.trim().length > 3 && status !== 'sending';
+  const canSubmit = adresse.trim().length > 3 && telefon.trim().length > 3 && status !== 'sending';
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -39,7 +40,7 @@ export default function LeadCard({ variant, finn, kontekstAdresse }: { variant: 
       const res = await fetch('/api/lead', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ adresse, kilde: variant, kontekstFinn: finn, kontekstAdresse }),
+        body: JSON.stringify({ adresse, telefon, kilde: variant, kontekstFinn: finn, kontekstAdresse }),
       });
       if (!res.ok) throw new Error();
       setStatus('done');
@@ -76,6 +77,8 @@ export default function LeadCard({ variant, finn, kontekstAdresse }: { variant: 
       ) : (
         <form onSubmit={submit} className="flex flex-col gap-2.5 mt-1">
           <input value={adresse} onChange={e => setAdresse(e.target.value)} placeholder="Adressen din, f.eks. Storgata 1, 0001 Oslo" required
+            className="w-full px-3 py-2 rounded-lg text-sm bg-white" style={inputStyle} />
+          <input value={telefon} onChange={e => setTelefon(e.target.value)} placeholder="Telefonnummer" type="tel" required
             className="w-full px-3 py-2 rounded-lg text-sm bg-white" style={inputStyle} />
           <button type="submit" disabled={!canSubmit}
             className="text-sm font-semibold text-white px-4 py-2.5 rounded-lg transition-all hover:bg-blue-500 disabled:opacity-40"

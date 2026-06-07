@@ -15,8 +15,9 @@ export async function POST(request: Request) {
   }
 
   const adresse = String(body.adresse ?? '').trim();
-  if (!adresse) {
-    return Response.json({ error: 'Adresse er påkrevd' }, { status: 400 });
+  const telefon = String(body.telefon ?? '').trim();
+  if (!adresse || !telefon) {
+    return Response.json({ error: 'Adresse og telefon er påkrevd' }, { status: 400 });
   }
 
   // Human-readable lead type for the Sheet/email.
@@ -34,6 +35,7 @@ export async function POST(request: Request) {
   const row = {
     tidspunkt,
     type,
+    telefon,
     adresse,
     kontekstAdresse: String(body.kontekstAdresse ?? '').trim(),
     kontekstFinn: String(body.kontekstFinn ?? '').trim(),
