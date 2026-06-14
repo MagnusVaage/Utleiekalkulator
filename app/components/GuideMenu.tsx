@@ -28,6 +28,10 @@ export default function GuideMenu() {
               className="block px-3 py-2 rounded-lg text-sm font-bold text-blue-700 hover:bg-blue-500/10 transition-colors">
               🔍 Analyser bolig
             </Link>
+            <Link href="/kalkulatorer" onClick={close}
+              className="block px-3 py-2 rounded-lg text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors">
+              🧮 Andre kalkulatorer
+            </Link>
             <div className="h-px my-2" style={{ background: 'rgba(15,23,42,0.08)' }} />
             <p className="text-xs text-slate-500 uppercase tracking-wider px-3 py-2">Guider</p>
             <Link href="/lonner-det-seg-a-leie-ut" onClick={close}
