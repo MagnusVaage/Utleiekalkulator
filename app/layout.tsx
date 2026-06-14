@@ -16,9 +16,9 @@ const geistMono = Geist_Mono({
 const siteUrl = "https://utleiekalkulatoren.no";
 
 export const metadata: Metadata = {
-  title: "Utleiekalkulator 2026 – Beregn yield, kontantstrøm og skatt",
+  title: "Analyser salgsoppgaven før du byr – Utleiekalkulator",
   description:
-    "Se om utleieboligen går i pluss før du kjøper. Regn ut yield, kontantstrøm, lån og skatt på sekunder. Lim inn Finn.no-lenke eller fyll inn selv. Gratis, uten registrering.",
+    "Lim inn en Finn-lenke, så går vi gjennom salgsoppgaven for deg og viser hva du bør være obs på før du byr – og om boligen lønner seg. Helt gratis og uten registrering.",
   keywords: [
     "utleiekalkulator",
     "utleiebolig kalkulator",
@@ -36,9 +36,9 @@ export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   alternates: { canonical: "/" },
   openGraph: {
-    title: "Utleiekalkulator 2026 – Beregn yield, kontantstrøm og skatt",
+    title: "Analyser salgsoppgaven før du byr – Utleiekalkulator",
     description:
-      "Se om utleieboligen går i pluss før du kjøper. Yield, kontantstrøm, lån og skatt på sekunder. Gratis.",
+      "Lim inn en Finn-lenke, så går vi gjennom salgsoppgaven og viser hva du bør være obs på før du byr. Helt gratis.",
     url: siteUrl,
     siteName: "Utleiekalkulator",
     locale: "nb_NO",
@@ -46,9 +46,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Utleiekalkulator 2026 – Beregn yield, kontantstrøm og skatt",
+    title: "Analyser salgsoppgaven før du byr – Utleiekalkulator",
     description:
-      "Se om utleieboligen går i pluss før du kjøper. Yield, kontantstrøm, lån og skatt på sekunder. Gratis.",
+      "Lim inn en Finn-lenke, så går vi gjennom salgsoppgaven og viser hva du bør være obs på før du byr. Helt gratis.",
   },
   robots: {
     index: true,
