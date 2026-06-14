@@ -140,6 +140,15 @@ export default function BoliglanKalkulator() {
             </p>
           </div>
         )}
+
+        {/* Subtil kryss-lenking */}
+        <div className="mt-10">
+          <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3">Flere kalkulatorer</p>
+          <div className="flex flex-wrap gap-2">
+            <Link href="/kalkulatorer" className="text-sm px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition-colors" style={card}>🧮 Alle kalkulatorer</Link>
+            <Link href="/kalkulator" className="text-sm px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition-colors" style={card}>📊 Utleiekalkulator</Link>
+          </div>
+        </div>
       </main>
     </div>
   );
