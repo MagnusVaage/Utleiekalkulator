@@ -16,9 +16,9 @@ const geistMono = Geist_Mono({
 const siteUrl = "https://utleiekalkulatoren.no";
 
 export const metadata: Metadata = {
-  title: "Analyser salgsoppgaven før du byr – Utleiekalkulator",
+  title: "Sjekk boligen før du byr – gratis | Utleiekalkulator",
   description:
-    "Lim inn en Finn-lenke, så går vi gjennom salgsoppgaven for deg og viser hva du bør være obs på før du byr – og om boligen lønner seg. Helt gratis og uten registrering.",
+    "Skal du kjøpe bolig? Lim inn Finn-lenken, så går vi gjennom salgsoppgaven for deg på sekunder og viser hva du bør være obs på. Helt gratis, ingen registrering.",
   keywords: [
     "utleiekalkulator",
     "utleiebolig kalkulator",
@@ -36,9 +36,9 @@ export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   alternates: { canonical: "/" },
   openGraph: {
-    title: "Analyser salgsoppgaven før du byr – Utleiekalkulator",
+    title: "Sjekk boligen før du byr – gratis | Utleiekalkulator",
     description:
-      "Lim inn en Finn-lenke, så går vi gjennom salgsoppgaven og viser hva du bør være obs på før du byr. Helt gratis.",
+      "Skal du kjøpe bolig? Lim inn Finn-lenken, så går vi gjennom salgsoppgaven for deg på sekunder. Helt gratis.",
     url: siteUrl,
     siteName: "Utleiekalkulator",
     locale: "nb_NO",
@@ -46,9 +46,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Analyser salgsoppgaven før du byr – Utleiekalkulator",
+    title: "Sjekk boligen før du byr – gratis | Utleiekalkulator",
     description:
-      "Lim inn en Finn-lenke, så går vi gjennom salgsoppgaven og viser hva du bør være obs på før du byr. Helt gratis.",
+      "Skal du kjøpe bolig? Lim inn Finn-lenken, så går vi gjennom salgsoppgaven for deg på sekunder. Helt gratis.",
   },
   robots: {
     index: true,
