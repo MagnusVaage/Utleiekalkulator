@@ -5,9 +5,18 @@ import Link from 'next/link';
 
 // Inline hamburger menu meant to sit inside a header/nav. Renders a compact
 // button with a dropdown of "Analyser bolig" + the guide pages.
+const ARTIKLER = [
+  { href: '/boligmarkedet-2026', title: 'Boligmarkedet 2026' },
+  { href: '/egenkapitalkrav', title: 'Nytt egenkapitalkrav: 10 %' },
+  { href: '/renteutvikling-2026', title: 'Renteutvikling 2026' },
+  { href: '/hva-koster-det-a-kjope-bolig', title: 'Hva koster det å kjøpe bolig?' },
+  { href: '/vanligste-tabbene-ved-boligkjop', title: 'Vanligste tabbene ved boligkjøp' },
+];
+
 export default function GuideMenu() {
   const [open, setOpen] = useState(false);
-  const close = () => setOpen(false);
+  const [artiklerOpen, setArtiklerOpen] = useState(false);
+  const close = () => { setOpen(false); setArtiklerOpen(false); };
 
   return (
     <div className="relative shrink-0">
@@ -32,6 +41,23 @@ export default function GuideMenu() {
               className="block px-3 py-2 rounded-lg text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors">
               🧮 Andre kalkulatorer
             </Link>
+
+            <button onClick={() => setArtiklerOpen(v => !v)} aria-expanded={artiklerOpen}
+              className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors">
+              <span>📰 Artikler</span>
+              <span className={`text-slate-400 transition-transform ${artiklerOpen ? 'rotate-90' : ''}`}>›</span>
+            </button>
+            {artiklerOpen && (
+              <div className="pl-3 mb-1">
+                {ARTIKLER.map((a) => (
+                  <Link key={a.href} href={a.href} onClick={close}
+                    className="block px-3 py-1.5 rounded-lg text-sm text-slate-600 hover:bg-slate-100 transition-colors">
+                    {a.title}
+                  </Link>
+                ))}
+              </div>
+            )}
+
             <div className="h-px my-2" style={{ background: 'rgba(15,23,42,0.08)' }} />
             <p className="text-xs text-slate-500 uppercase tracking-wider px-3 py-2">Guider</p>
             <Link href="/lonner-det-seg-a-leie-ut" onClick={close}
