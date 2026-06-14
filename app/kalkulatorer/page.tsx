@@ -19,7 +19,7 @@ const card = { background: '#ffffff', border: '1px solid rgba(15,23,42,0.08)', b
 
 const KALKULATORER = [
   { href: '/boliglanskalkulator', icon: '🏦', title: 'Boliglånskalkulator', desc: 'Hvor mye kan du låne, og hva koster lånet i måneden?', live: true },
-  { href: '', icon: '🧾', title: 'Dokumentavgift', desc: 'Hva må du betale i dokumentavgift (2,5 %) ved kjøp?', live: false },
+  { href: '/dokumentavgift', icon: '🧾', title: 'Dokumentavgift', desc: 'Hva må du betale i dokumentavgift (2,5 %) ved kjøp?', live: true },
   { href: '', icon: '🐷', title: 'Hvor mye må jeg spare?', desc: 'Hvor lang tid tar det å nå egenkapitalkravet?', live: false },
   { href: '', icon: '⚖️', title: 'Leie vs. eie', desc: 'Lønner det seg å kjøpe, eller fortsette å leie?', live: false },
   { href: '', icon: '🎯', title: 'Maks budsjett i budrunden', desc: 'Hva har du råd til å by, gitt inntekt og egenkapital?', live: false },
