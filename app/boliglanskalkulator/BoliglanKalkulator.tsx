@@ -110,12 +110,12 @@ export default function BoliglanKalkulator() {
             <div className="grid sm:grid-cols-2 gap-6 mt-6">
               <div>
                 <div className="flex justify-between items-baseline">
-                  <label className="text-xs font-semibold uppercase tracking-wider text-slate-400">Nominell rente</label>
-                  <span className="text-sm font-bold">{rente.toString().replace('.', ',')} %</span>
+                  <label className="text-xs font-semibold uppercase tracking-wider text-slate-400">Rente</label>
+                  <span className="text-sm font-bold">{effektivRente(rente).toFixed(2).replace('.', ',')} % effektiv</span>
                 </div>
                 <input type="range" min={1} max={10} step={0.1} value={rente}
                   onChange={e => setRente(Number(e.target.value))} className="w-full mt-2 accent-blue-600" />
-                <p className="text-xs text-slate-400 mt-1.5">Tilsvarer {effektivRente(rente).toFixed(2).replace('.', ',')} % effektiv rente</p>
+                <p className="text-xs text-slate-400 mt-1.5">{rente.toString().replace('.', ',')} % nominell rente</p>
               </div>
               <div>
                 <div className="flex justify-between items-baseline">
