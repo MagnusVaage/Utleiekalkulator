@@ -19,6 +19,20 @@ export default function Page() {
 
   return (
     <div className="min-h-screen text-slate-900" style={{ background: '#f7f8fa' }}>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "FAQPage",
+            mainEntity: [
+              { "@type": "Question", name: "Hva er brutto yield på utleiebolig?", acceptedAnswer: { "@type": "Answer", text: "Brutto yield er den årlige leieinntekten delt på kjøpesummen, oppgitt i prosent. En bolig til 3 millioner kroner med 15 000 kr i månedlig leie gir en brutto yield på 6 %. I Norge regnes 5 % eller mer som et godt utgangspunkt." } },
+              { "@type": "Question", name: "Hva er rentefradrag og hvor mye sparer jeg?", acceptedAnswer: { "@type": "Answer", text: "Når du leier ut bolig, kan du trekke fra renteutgiftene på skatten. Staten dekker 22 % av rentekostnadene dine. Har du 10 000 kr i månedlige renter, sparer du 26 400 kr i året." } },
+              { "@type": "Question", name: "Kan jeg bruke verktøyet på Finn.no-annonser?", acceptedAnswer: { "@type": "Answer", text: "Ja. Lim inn en Finn.no-lenke øverst, så henter vi salgsoppgaven og alle tall automatisk." } },
+            ],
+          }),
+        }}
+      />
       {/* Header — pill nav */}
       <header className="px-4 sm:px-6 py-4">
         <div className="max-w-6xl mx-auto flex items-center justify-center">

@@ -98,49 +98,6 @@ export default function RootLayout({
             }),
           }}
         />
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              "@context": "https://schema.org",
-              "@type": "FAQPage",
-              mainEntity: [
-                {
-                  "@type": "Question",
-                  name: "Hva er brutto yield på utleiebolig?",
-                  acceptedAnswer: {
-                    "@type": "Answer",
-                    text: "Brutto yield er den årlige leieinntekten delt på kjøpesummen, oppgitt i prosent. En bolig til 3 millioner kroner med 15 000 kr i månedlig leie gir en brutto yield på 6 %. I Norge regnes 5 % eller mer som et godt utgangspunkt.",
-                  },
-                },
-                {
-                  "@type": "Question",
-                  name: "Hva er rentefradrag og hvor mye sparer jeg?",
-                  acceptedAnswer: {
-                    "@type": "Answer",
-                    text: "Når du leier ut bolig, kan du trekke fra renteutgiftene på skatten. Staten dekker 22 % av rentekostnadene dine. Har du 10 000 kr i månedlige renter, sparer du 26 400 kr i året.",
-                  },
-                },
-                {
-                  "@type": "Question",
-                  name: "Hva er forskjellen på annuitetslån og serielån?",
-                  acceptedAnswer: {
-                    "@type": "Answer",
-                    text: "Annuitetslån har fast månedlig betaling — mer renter i starten, mer avdrag mot slutten. Serielån har fast avdrag og synkende renter, noe som gir høyere betaling i starten men lavere totalkostnad over tid.",
-                  },
-                },
-                {
-                  "@type": "Question",
-                  name: "Kan jeg bruke kalkulatoren på Finn.no-annonser?",
-                  acceptedAnswer: {
-                    "@type": "Answer",
-                    text: "Ja. Lim inn en Finn.no-lenke øverst, trykk «Hent fra FINN», og alle tall hentes automatisk. Du kan justere tallene manuelt etterpå.",
-                  },
-                },
-              ],
-            }),
-          }}
-        />
       </head>
       <body className="min-h-full flex flex-col">
         <div className="flex-1">{children}</div>
