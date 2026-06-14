@@ -5,19 +5,21 @@ import Link from 'next/link';
 
 const fmt = (n: number) => new Intl.NumberFormat('nb-NO').format(Math.round(n));
 const card = { background: '#ffffff', border: '1px solid rgba(15,23,42,0.08)', boxShadow: '0 1px 3px rgba(15,23,42,0.04)' };
-const inputCls = 'w-full h-11 px-3 rounded-xl text-sm bg-white outline-none focus:border-blue-400 text-right font-semibold';
 const inputStyle = { border: '1px solid rgba(15,23,42,0.15)' };
+const effektivRente = (nominell: number) => (Math.pow(1 + nominell / 100 / 12, 12) - 1) * 100;
 
-function NumField({ label, value, onChange, suffix = 'kr', step = 10000 }:
-  { label: string; value: number; onChange: (n: number) => void; suffix?: string; step?: number }) {
+// Number field with live thousand-separators (600 000 instead of 600000).
+function NumField({ label, value, onChange, suffix = 'kr' }:
+  { label: string; value: number; onChange: (n: number) => void; suffix?: string }) {
   return (
     <div>
       <label className="text-xs font-semibold uppercase tracking-wider text-slate-400">{label}</label>
-      <div className="relative mt-1">
-        <input type="number" value={value} step={step} min={0}
-          onChange={e => onChange(Math.max(0, Number(e.target.value)))}
-          className={inputCls} style={inputStyle} />
-        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 pointer-events-none">{suffix}</span>
+      <div className="relative mt-1.5">
+        <input type="text" inputMode="numeric" value={fmt(value)}
+          onChange={e => onChange(Number(e.target.value.replace(/[^\d]/g, '')) || 0)}
+          className="w-full h-12 pl-3 pr-10 rounded-xl text-base bg-white outline-none focus:border-blue-400 text-right font-bold tabular-nums"
+          style={inputStyle} />
+        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-slate-400 pointer-events-none">{suffix}</span>
       </div>
     </div>
   );
@@ -113,6 +115,7 @@ export default function BoliglanKalkulator() {
                 </div>
                 <input type="range" min={1} max={10} step={0.1} value={rente}
                   onChange={e => setRente(Number(e.target.value))} className="w-full mt-2 accent-blue-600" />
+                <p className="text-xs text-slate-400 mt-1.5">Tilsvarer {effektivRente(rente).toFixed(2).replace('.', ',')} % effektiv rente</p>
               </div>
               <div>
                 <div className="flex justify-between items-baseline">
