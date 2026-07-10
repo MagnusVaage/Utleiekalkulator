@@ -428,8 +428,32 @@ export default function AnalyseClient({ finn, initialMetric, initialRisk, initia
           <div className="rounded-2xl p-6 mb-6" style={card}>
             <h2 className="font-bold text-lg mb-1">Risikoanalyse av salgsoppgaven</h2>
             <p className="text-slate-600 text-sm mb-4">
-              Last opp salgsoppgaven (PDF) fra Finn-annonsen, så leser AI-en tilstandsrapporten og gir deg risikofunn + spørsmål til megler.
+              {!finn
+                ? 'Lim inn Finn-lenken, så henter vi salgsoppgaven automatisk og gir deg risikofunn (TG1/TG2/TG3) + spørsmål til megler. Eller last opp PDF-en selv.'
+                : 'Last opp salgsoppgaven (PDF) fra Finn-annonsen, så leser AI-en tilstandsrapporten og gir deg risikofunn + spørsmål til megler.'}
             </p>
+
+            {!finn && (
+              <>
+                <form action="/analyse" method="get" className="flex flex-col sm:flex-row gap-2 mb-4">
+                  <input name="finn" required type="url" inputMode="url"
+                    placeholder="Lim inn Finn-lenke…"
+                    className="flex-1 px-4 py-3 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/30"
+                    style={{ background: '#f8fafc', border: '1px solid rgba(15,23,42,0.12)' }} />
+                  <button type="submit"
+                    className="px-5 py-3 rounded-xl font-bold text-white whitespace-nowrap transition-transform hover:scale-[1.02]"
+                    style={{ background: 'linear-gradient(135deg,#2563eb,#1d4ed8)' }}>
+                    Analyser bolig →
+                  </button>
+                </form>
+                <div className="flex items-center gap-3 mb-4">
+                  <span className="h-px flex-1" style={{ background: 'rgba(15,23,42,0.1)' }} />
+                  <span className="text-xs text-slate-400 font-medium">eller last opp PDF</span>
+                  <span className="h-px flex-1" style={{ background: 'rgba(15,23,42,0.1)' }} />
+                </div>
+              </>
+            )}
+
             <div onDragOver={e => { e.preventDefault(); setDragging(true); }} onDragLeave={() => setDragging(false)} onDrop={onDrop}
               onClick={() => inputRef.current?.click()}
               className="rounded-xl p-8 text-center cursor-pointer transition-all"

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import ArticleCTA from "../components/ArticleCTA";
 
 export const metadata: Metadata = {
   title: "Slik beregnes det – metode og forutsetninger | Utleiekalkulator",
@@ -142,6 +143,17 @@ export default function Page() {
             ← Tilbake til kalkulatoren
           </Link>
         </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-12">
+          <Link href="/lonner-det-seg-a-leie-ut" className="rounded-xl p-5 transition-all hover:bg-white/5" style={cardStyle}>
+            <p className="text-blue-400 text-xs font-semibold uppercase tracking-wider mb-2">Les også</p>
+            <p className="font-semibold text-white">Lønner det seg å leie ut? →</p>
+          </Link>
+          <Link href="/skatt-leieinntekter" className="rounded-xl p-5 transition-all hover:bg-white/5" style={cardStyle}>
+            <p className="text-blue-400 text-xs font-semibold uppercase tracking-wider mb-2">Les også</p>
+            <p className="font-semibold text-white">Skatt på leieinntekter →</p>
+          </Link>
+        </div>
+        <ArticleCTA />
       </article>
     </div>
   );

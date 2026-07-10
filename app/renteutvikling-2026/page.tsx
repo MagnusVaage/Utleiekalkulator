@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import ArticleCTA from "../components/ArticleCTA";
 
 export const metadata: Metadata = {
   title: "Renteutvikling 2026 – hva betyr det for boliglånet? | Utleiekalkulator",
@@ -84,6 +85,7 @@ export default function Page() {
             <p className="font-semibold text-white">Nytt egenkapitalkrav: 10 % →</p>
           </Link>
         </div>
+        <ArticleCTA />
       </article>
 
       <footer className="px-6 py-8 text-center mt-10" style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}>

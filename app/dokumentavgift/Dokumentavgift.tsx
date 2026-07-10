@@ -107,6 +107,14 @@ export default function Dokumentavgift() {
           </p>
         </div>
 
+        <div className="rounded-2xl p-6 mt-10 text-center" style={{ background: 'rgba(37,99,235,0.06)', border: '1px solid rgba(37,99,235,0.25)' }}>
+          <h3 className="text-lg font-bold mb-1.5">Skal du kjøpe denne boligen?</h3>
+          <p className="text-sm text-slate-500 mb-4 max-w-md mx-auto">Lim inn Finn-lenken, så avdekker AI-en risiko i salgsoppgaven (TG1/TG2/TG3) og regner yield og kontantstrøm — på sekunder.</p>
+          <Link href="/analyse" className="inline-block px-6 py-3 rounded-xl font-bold text-white transition-transform hover:scale-[1.02]" style={{ background: 'linear-gradient(135deg,#2563eb,#1d4ed8)' }}>
+            Analyser salgsoppgaven gratis →
+          </Link>
+        </div>
+
         <div className="mt-10">
           <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3">Flere kalkulatorer</p>
           <div className="flex flex-wrap gap-2">
