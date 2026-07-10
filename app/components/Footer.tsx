@@ -22,6 +22,7 @@ export default function Footer() {
             <li><Link href="/skatt-leieinntekter" className="text-slate-300 hover:text-white transition-colors">Skatt på utleie</Link></li>
             <li><Link href="/egenkapital-utleiebolig" className="text-slate-300 hover:text-white transition-colors">Egenkapitalkrav</Link></li>
             <li><Link href="/slik-beregnes-det" className="text-slate-300 hover:text-white transition-colors">Slik beregnes det</Link></li>
+            <li><Link href="/utleie" className="text-slate-300 hover:text-white transition-colors">Leiepriser per by</Link></li>
           </ul>
         </div>
 

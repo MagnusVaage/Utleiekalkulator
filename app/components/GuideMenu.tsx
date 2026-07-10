@@ -72,6 +72,10 @@ export default function GuideMenu() {
               className="block px-3 py-2 rounded-lg text-sm font-medium text-sky-700 hover:bg-sky-500/10 transition-colors">
               Egenkapitalkrav
             </Link>
+            <Link href="/utleie" onClick={close}
+              className="block px-3 py-2 rounded-lg text-sm font-medium text-blue-700 hover:bg-blue-500/10 transition-colors">
+              Leiepriser per by
+            </Link>
             <div className="h-px my-2" style={{ background: 'rgba(15,23,42,0.08)' }} />
             <Link href="/slik-beregnes-det" onClick={close}
               className="block px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-100 transition-colors">

@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { STEDER } from "./utleie/steder";
 
 const BASE = "https://utleiekalkulatoren.no";
 
@@ -136,5 +137,17 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "yearly",
       priority: 0.3,
     },
+    {
+      url: `${BASE}/utleie`,
+      lastModified: new Date(),
+      changeFrequency: "monthly",
+      priority: 0.7,
+    },
+    ...STEDER.map((s) => ({
+      url: `${BASE}/utleie/${s.slug}`,
+      lastModified: new Date(),
+      changeFrequency: "monthly" as const,
+      priority: 0.6,
+    })),
   ];
 }
