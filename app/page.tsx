@@ -41,7 +41,7 @@ export default function Page() {
             <GuideMenu />
             <Link href="/" className="flex items-center gap-2 pl-3 pr-4 py-1.5 rounded-full"
               style={{ background: 'rgba(37,99,235,0.08)', border: '1px solid rgba(37,99,235,0.25)' }}>
-              <img src="/logo.svg" alt="" className="w-6 h-6" />
+              <img src="/logo.svg" alt="Utleiekalkulator logo"className="w-6 h-6" />
               <span className="font-bold text-sm">Utleiekalkulator</span>
             </Link>
             <Link href="/analyse" className="px-3 py-1.5 text-sm text-slate-600 hover:text-slate-900 transition-colors flex items-center gap-1.5">

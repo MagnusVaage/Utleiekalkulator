@@ -16,9 +16,9 @@ const geistMono = Geist_Mono({
 const siteUrl = "https://utleiekalkulatoren.no";
 
 export const metadata: Metadata = {
-  title: "Sjekk boligen før du byr – gratis | Utleiekalkulator",
+  title: "Utleiekalkulator – sjekk boligen før du byr | Gratis boliganalyse",
   description:
-    "Skal du kjøpe bolig? Lim inn Finn-lenken, så går vi gjennom salgsoppgaven for deg på sekunder og viser hva du bør være obs på. Helt gratis, ingen registrering.",
+    "Utleiekalkulator med gratis boliganalyse: Lim inn Finn-lenken, så går vi gjennom salgsoppgaven på sekunder og regner yield, kontantstrøm og skatt. Ingen registrering.",
   keywords: [
     "utleiekalkulator",
     "utleiebolig kalkulator",
@@ -36,7 +36,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   alternates: { canonical: "/" },
   openGraph: {
-    title: "Sjekk boligen før du byr – gratis | Utleiekalkulator",
+    title: "Utleiekalkulator – sjekk boligen før du byr | Gratis boliganalyse",
     description:
       "Skal du kjøpe bolig? Lim inn Finn-lenken, så går vi gjennom salgsoppgaven for deg på sekunder. Helt gratis.",
     url: siteUrl,
@@ -46,7 +46,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Sjekk boligen før du byr – gratis | Utleiekalkulator",
+    title: "Utleiekalkulator – sjekk boligen før du byr | Gratis boliganalyse",
     description:
       "Skal du kjøpe bolig? Lim inn Finn-lenken, så går vi gjennom salgsoppgaven for deg på sekunder. Helt gratis.",
   },
@@ -73,6 +73,33 @@ export default function RootLayout({
         <script
           dangerouslySetInnerHTML={{
             __html: `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-P7CY6GRNFY');`,
+          }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@graph": [
+                {
+                  "@type": "Organization",
+                  "@id": `${siteUrl}/#organization`,
+                  name: "Utleiekalkulator",
+                  url: siteUrl,
+                  logo: `${siteUrl}/logo.svg`,
+                  description:
+                    "Utleiekalkulator lager gratis verktøy for boliganalyse: AI-gjennomgang av salgsoppgaver, utleiekalkulator, boliglånskalkulator og guider om boligkjøp og utleie.",
+                },
+                {
+                  "@type": "WebSite",
+                  "@id": `${siteUrl}/#website`,
+                  name: "Utleiekalkulator",
+                  url: siteUrl,
+                  inLanguage: "nb-NO",
+                  publisher: { "@id": `${siteUrl}/#organization` },
+                },
+              ],
+            }),
           }}
         />
         <script

@@ -1,0 +1,39 @@
+# Utleiekalkulator
+
+> Utleiekalkulatoren.no er et gratis norsk verktøy for boligkjøpere og utleieinvestorer. Lim inn en Finn.no-lenke og få en AI-analyse av salgsoppgaven (TG1/TG2/TG3-funn, spørsmål til megler) samt beregning av yield, kontantstrøm, lån og skatt. Ingen registrering. Innholdet er på norsk (bokmål) og gjelder norske forhold (2026-regler).
+
+Viktig: Verktøyet er et støtteverktøy og erstatter ikke profesjonell rådgivning, takst eller egen gjennomgang av salgsoppgaven.
+
+## Verktøy
+
+- [Boliganalyse](https://utleiekalkulatoren.no/analyse): AI-gjennomgang av salgsoppgave fra Finn-lenke — risikofunn, meglerspørsmål, yield og kontantstrøm
+- [Utleiekalkulator](https://utleiekalkulatoren.no/kalkulator): Regn ut om en utleiebolig går i pluss — yield, kontantstrøm, lån og skatt
+- [Tilstandsrapport-analyse](https://utleiekalkulatoren.no/rapport): Last opp PDF av tilstandsrapport/salgsoppgave og få funnene oppsummert
+- [Boliglånskalkulator](https://utleiekalkulatoren.no/boliglanskalkulator): Hvor mye kan du låne, og hva koster lånet per måned
+- [Dokumentavgift-kalkulator](https://utleiekalkulatoren.no/dokumentavgift): Dokumentavgift (2,5 %) og tinglysingsgebyr ved boligkjøp
+- [Alle kalkulatorer](https://utleiekalkulatoren.no/kalkulatorer): Oversikt over alle gratis boligkalkulatorer
+
+## Leiepriser og yield
+
+- [Leiepriser by for by](https://utleiekalkulatoren.no/utleie): Veiledende leiepriser, kvadratmeterpris og brutto yield for norske byer og Oslo-bydeler
+
+## Guider
+
+- [Lønner det seg å leie ut?](https://utleiekalkulatoren.no/lonner-det-seg-a-leie-ut): Regnestykket bak utleie i 2026
+- [Skatt på leieinntekter](https://utleiekalkulatoren.no/skatt-leieinntekter): 22 % kapitalskatt, rentefradrag og fradragsregler
+- [Egenkapital til utleiebolig](https://utleiekalkulatoren.no/egenkapital-utleiebolig): Krav til egenkapital ved sekundærbolig
+- [Egenkapitalkrav](https://utleiekalkulatoren.no/egenkapitalkrav): Hvor mye egenkapital trenger du for å kjøpe bolig
+- [Tilstandsrapport forklart](https://utleiekalkulatoren.no/tilstandsrapport-forklart): Slik leser du tilstandsrapporten
+- [Hva betyr TG1?](https://utleiekalkulatoren.no/hva-betyr-tg1)
+- [Hva betyr TG2?](https://utleiekalkulatoren.no/hva-betyr-tg2)
+- [Hva betyr TG3?](https://utleiekalkulatoren.no/hva-betyr-tg3)
+- [Hva koster det å kjøpe bolig?](https://utleiekalkulatoren.no/hva-koster-det-a-kjope-bolig): Alle omkostninger ved boligkjøp
+- [Vanligste tabbene ved boligkjøp](https://utleiekalkulatoren.no/vanligste-tabbene-ved-boligkjop)
+- [Boligmarkedet 2026](https://utleiekalkulatoren.no/boligmarkedet-2026): Marked, priser og utsikter
+- [Renteutvikling 2026](https://utleiekalkulatoren.no/renteutvikling-2026): Rentebanen og hva den betyr for boliglånet
+- [Slik beregnes det](https://utleiekalkulatoren.no/slik-beregnes-det): Metodikk og forutsetninger bak kalkulatorene
+
+## Om
+
+- [Om oss og kontakt](https://utleiekalkulatoren.no/om-oss)
+- [Personvern](https://utleiekalkulatoren.no/personvern)

@@ -58,13 +58,13 @@ function Fact({ label, value }: { label: string; value: string }) {
   );
 }
 
-function Carousel({ images }: { images: string[] }) {
+function Carousel({ images, alt }: { images: string[]; alt?: string }) {
   const [i, setI] = useState(0);
   if (!images.length) return null;
   const n = images.length;
   return (
     <div className="relative h-56 sm:h-72 rounded-xl overflow-hidden mb-5" style={{ background: '#000' }}>
-      <img src={images[i]} alt="" className="w-full h-full object-cover" />
+      <img src={images[i]} alt={alt ? `${alt} – bilde ${i + 1} av ${n}` : 'Bilde av boligen'} className="w-full h-full object-cover" />
       {n > 1 && (
         <>
           <button onClick={() => setI((i - 1 + n) % n)} aria-label="Forrige"
@@ -229,7 +229,7 @@ export default function AnalyseClient({ finn, initialMetric, initialRisk, initia
       <header className="px-4 sm:px-6 py-4 sticky top-0 z-20 backdrop-blur" style={{ background: 'rgba(247,248,250,0.9)', borderBottom: '1px solid rgba(15,23,42,0.08)' }}>
         <div className="max-w-5xl mx-auto flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2">
-            <img src="/logo.svg" alt="" className="w-7 h-7" />
+            <img src="/logo.svg" alt="Utleiekalkulator logo"className="w-7 h-7" />
             <span className="font-bold text-sm">Utleiekalkulator</span>
           </Link>
           <Link href="/" className="text-sm font-semibold text-white px-4 py-2 rounded-lg transition-all hover:bg-blue-500 shadow-sm" style={{ background: '#2563eb' }}>+ Ny analyse</Link>
@@ -254,7 +254,7 @@ export default function AnalyseClient({ finn, initialMetric, initialRisk, initia
         {/* ── Property hero ── */}
         {metric && (
           <div className="rounded-2xl p-5 sm:p-6 mb-6" style={card}>
-            <Carousel images={metric.images || []} />
+            <Carousel images={metric.images || []} alt={metric.address || metric.title} />
 
             <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
               <div>

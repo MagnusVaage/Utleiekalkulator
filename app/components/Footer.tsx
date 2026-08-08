@@ -7,7 +7,7 @@ export default function Footer() {
       <div className="max-w-6xl mx-auto grid gap-8 md:grid-cols-3">
         <div>
           <div className="flex items-center gap-2 mb-3">
-            <img src="/logo.svg" alt="" className="w-7 h-7" />
+            <img src="/logo.svg" alt="Utleiekalkulator logo"className="w-7 h-7" />
             <span className="font-extrabold text-white tracking-tight">Utleiekalkulator</span>
           </div>
           <p className="text-slate-400 text-sm leading-relaxed">
