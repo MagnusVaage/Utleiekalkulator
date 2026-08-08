@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 const siteUrl = "https://utleiekalkulatoren.no";
 
 export const metadata: Metadata = {
-  title: "Boliganalyse med AI – finn risikoen før du byr | Gratis",
+  title: "AI-boliganalyse og utleiekalkulator – helt gratis",
   description:
     "Gratis AI-analyse av bolig: Lim inn Finn-lenken, så leser vi salgsoppgaven og tilstandsrapporten på sekunder og viser risikofunn, spørsmål til megler, yield og kontantstrøm.",
   keywords: [
@@ -36,7 +36,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   alternates: { canonical: "/" },
   openGraph: {
-    title: "Boliganalyse med AI – finn risikoen før du byr | Gratis",
+    title: "AI-boliganalyse og utleiekalkulator – helt gratis",
     description:
       "Skal du kjøpe bolig? Lim inn Finn-lenken, så går vi gjennom salgsoppgaven for deg på sekunder. Helt gratis.",
     url: siteUrl,
@@ -46,7 +46,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Boliganalyse med AI – finn risikoen før du byr | Gratis",
+    title: "AI-boliganalyse og utleiekalkulator – helt gratis",
     description:
       "Skal du kjøpe bolig? Lim inn Finn-lenken, så går vi gjennom salgsoppgaven for deg på sekunder. Helt gratis.",
   },
