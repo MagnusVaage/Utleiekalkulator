@@ -60,27 +60,42 @@ function Fact({ label, value }: { label: string; value: string }) {
 
 function Carousel({ images, alt }: { images: string[]; alt?: string }) {
   const [i, setI] = useState(0);
-  if (!images.length) return null;
-  const n = images.length;
+  // Not every photo exists in the 1280w variant the API asks for — fall back
+  // to the original size on load error, and drop URLs that fail entirely so
+  // the carousel never shows an empty black frame.
+  const [fallback, setFallback] = useState<Record<string, string>>({});
+  const [dead, setDead] = useState<string[]>([]);
+  const live = images.filter(u => !dead.includes(u));
+  if (!live.length) return null;
+  const n = live.length;
+  const idx = Math.min(i, n - 1);
+  const cur = live[idx];
+  const onError = () => {
+    if (!fallback[cur] && cur.includes('/dynamic/1280w/')) {
+      setFallback(f => ({ ...f, [cur]: cur.replace('/dynamic/1280w/', '/dynamic/default/') }));
+    } else {
+      setDead(d => [...d, cur]);
+    }
+  };
   return (
     <div className="relative h-56 sm:h-72 rounded-xl overflow-hidden mb-5" style={{ background: '#000' }}>
-      <img src={images[i]} alt={alt ? `${alt} – bilde ${i + 1} av ${n}` : 'Bilde av boligen'} className="w-full h-full object-cover" />
+      <img src={fallback[cur] || cur} onError={onError} alt={alt ? `${alt} – bilde ${idx + 1} av ${n}` : 'Bilde av boligen'} className="w-full h-full object-cover" />
       {n > 1 && (
         <>
-          <button onClick={() => setI((i - 1 + n) % n)} aria-label="Forrige"
+          <button onClick={() => setI((idx - 1 + n) % n)} aria-label="Forrige"
             className="absolute left-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full flex items-center justify-center text-white"
             style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }}>‹</button>
-          <button onClick={() => setI((i + 1) % n)} aria-label="Neste"
+          <button onClick={() => setI((idx + 1) % n)} aria-label="Neste"
             className="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full flex items-center justify-center text-white"
             style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }}>›</button>
           <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
-            {images.map((_, k) => (
+            {live.map((_, k) => (
               <span key={k} className="w-1.5 h-1.5 rounded-full transition-all"
-                style={{ background: k === i ? '#fff' : 'rgba(255,255,255,0.4)' }} />
+                style={{ background: k === idx ? '#fff' : 'rgba(255,255,255,0.4)' }} />
             ))}
           </div>
           <span className="absolute top-3 right-3 text-xs font-medium px-2 py-1 rounded-md text-white"
-            style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }}>{i + 1} / {n}</span>
+            style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }}>{idx + 1} / {n}</span>
         </>
       )}
     </div>

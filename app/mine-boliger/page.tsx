@@ -66,7 +66,7 @@ export default function Page() {
             {list.map(a => (
               <div key={a.id} className="rounded-2xl overflow-hidden flex flex-col" style={card}>
                 <div className="h-40 relative" style={{ background: 'linear-gradient(135deg,#e2e8f0,#cbd5e1)' }}>
-                  {a.image && <img src={a.image} alt="" className="w-full h-full object-cover" />}
+                  {a.image && <img src={a.image} alt={a.address || 'Lagret bolig'} onError={e => { e.currentTarget.style.display = 'none'; }} className="w-full h-full object-cover" />}
                   <button onClick={() => onDelete(a.id, a.address)}
                     className="absolute top-2 right-2 text-xs font-medium px-2 py-1 rounded-md text-slate-700"
                     style={{ background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(4px)' }}>

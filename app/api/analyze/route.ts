@@ -88,7 +88,7 @@ function parseFinnHtml(html: string) {
 function extractImages(html: string): string[] {
   const out: string[] = [];
   const seen = new Set<string>();
-  const re = /https:\/\/images\.finncdn\.no\/dynamic\/[^"'\\ ]+?\.jpg/gi;
+  const re = /https:\/\/images\.finncdn\.no\/dynamic\/[^"'\\ ]+?\.(?:jpe?g|png|webp)/gi;
   let m: RegExpExecArray | null;
   while ((m = re.exec(html)) !== null) {
     let u = m[0].replace(/\\u002[fF]/g, '/');
