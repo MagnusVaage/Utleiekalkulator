@@ -125,6 +125,7 @@ export default function AnalyseClient({ finn, initialMetric, initialRisk, initia
   // risk flow: idle → fetching (auto) → analysing → done | manual
   const [riskState, setRiskState] = useState<'idle' | 'fetching' | 'analysing' | 'done' | 'manual'>(initialRisk ? 'done' : 'idle');
   const [autoMegler, setAutoMegler] = useState(initialMegler);
+  const [meglerLink, setMeglerLink] = useState('');
   const [pdfUrl, setPdfUrl] = useState(initialPdfUrl);
   const [autoFetched, setAutoFetched] = useState(!!initialRisk);
   const [risk, setRisk] = useState<RapportResult | null>(initialRisk);
@@ -186,6 +187,7 @@ export default function AnalyseClient({ finn, initialMetric, initialRisk, initia
           }
         } else {
           setAutoMegler(data.megler || '');
+          setMeglerLink(data.meglerLink || '');
           setRiskState('manual');
         }
       } catch {
@@ -445,8 +447,16 @@ export default function AnalyseClient({ finn, initialMetric, initialRisk, initia
             <p className="text-slate-600 text-sm mb-4">
               {!finn
                 ? 'Lim inn Finn-lenken, så henter vi salgsoppgaven automatisk og gir deg risikofunn (TG1/TG2/TG3) + spørsmål til megler. Eller last opp PDF-en selv.'
-                : 'Last opp salgsoppgaven (PDF) fra Finn-annonsen, så leser AI-en tilstandsrapporten og gir deg risikofunn + spørsmål til megler.'}
+                : 'Denne annonsen har salgsoppgaven bak en nedlasting vi ikke kommer forbi. Hent PDF-en og slipp den inn under, så leser AI-en tilstandsrapporten og gir deg risikofunn + spørsmål til megler.'}
             </p>
+
+            {finn && meglerLink && (
+              <a href={meglerLink} target="_blank" rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 mb-4 px-4 py-2.5 rounded-xl text-sm font-semibold text-blue-700 transition-transform hover:scale-[1.02]"
+                style={{ background: 'rgba(37,99,235,0.08)', border: '1px solid rgba(37,99,235,0.25)' }}>
+                Åpne salgsoppgaven hos {autoMegler || 'megler'} <span>↗</span>
+              </a>
+            )}
 
             {!finn && (
               <>

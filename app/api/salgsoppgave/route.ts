@@ -149,6 +149,54 @@ const MEGLER_DOMAINS = [
   'webmegler.no', 'meglervisning.no', 'partners.no', 'inviso.no', 'z-eiendom.no',
 ];
 
+// There are far more Norwegian brokerages than any hardcoded list can hold, so
+// instead of only trusting MEGLER_DOMAINS we treat every external link on the
+// Finn page as a possible broker EXCEPT the infrastructure/social/utility hosts
+// below. MEGLER_DOMAINS is kept purely to try the known ones first.
+const NON_MEGLER = [
+  'finn.no', 'finncdn.no', 'schibsted', 'google.', 'gstatic.', 'facebook.', 'instagram.',
+  'twitter.', 'x.com', 'linkedin.', 'youtube.', 'youtu.be', 'tiktok.', 'snapchat.',
+  'apple.com', 'microsoft.', 'vipps.no', 'bankid', 'kartverket.no', 'ssb.no',
+  'politiet.no', 'forbrukerradet.no', 'forbrukertilsynet.no', 'nabolag.no',
+  'boligmappa.no', 'ambita.', 'virdi.', 'vitecsoftware.', 'nef.no', 'altinn.no',
+  'skatteetaten.no', 'lovdata.no', 'regjeringen.no', 'nav.no', 'posten.no',
+];
+
+// Bound every outbound call so one slow broker site can't eat the whole 60s budget.
+async function fetchT(url: string, init: RequestInit = {}, ms = 12_000): Promise<Response | null> {
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), ms);
+  try {
+    return await fetch(url, { headers: HEADERS, redirect: 'follow', signal: ctrl.signal, ...init });
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(t);
+  }
+}
+
+function hostOf(url: string): string {
+  try { return new URL(url).hostname.replace(/^www\./, ''); } catch { return ''; }
+}
+
+// Download a PDF and pull its text out. Returns undefined when the URL isn't a
+// PDF, can't be fetched, or holds too little text to analyse (scanned documents).
+async function pdfText(url: string): Promise<string | undefined> {
+  const res = await fetchT(url, {}, 20_000);
+  if (!res?.ok) return undefined;
+  const buf = new Uint8Array(await res.arrayBuffer());
+  if (buf[0] !== 0x25 || buf[1] !== 0x50) return undefined; // not "%P(DF)"
+  try {
+    const pdf = await getDocumentProxy(buf);
+    const { text } = await extractText(pdf, { mergePages: true });
+    const merged = Array.isArray(text) ? text.join('\n') : text;
+    const clean = merged.slice(0, 200_000);
+    return clean.replace(/\s/g, '').length < 500 ? undefined : clean;
+  } catch {
+    return undefined;
+  }
+}
+
 // DNB Eiendom (Norway's largest) serves a fully digital salgsoppgave — the
 // "autoprospekt" page — with the complete tilstandsrapport text inline and NO
 // downloadable PDF. We strip that page to plain text instead of hunting for a PDF.
@@ -181,34 +229,92 @@ async function resolveDnbText(link: string): Promise<string | undefined> {
   return text.replace(/\s/g, '').length > 2000 ? text : undefined;
 }
 
-async function findMeglerLink(finnUrl: string): Promise<{ link?: string; estateId?: string }> {
-  const res = await fetch(finnUrl, { headers: HEADERS, next: { revalidate: 0 } });
-  if (!res.ok) return {};
+// Collect every plausible route to the salgsoppgave, best-first: the explicit
+// Finn CTA, then document-shaped URLs, then known brokerages, then any other
+// external site. Returning a ranked LIST rather than one link matters — when the
+// first candidate is a dead end we simply try the next instead of giving up.
+async function findMeglerLinks(finnUrl: string): Promise<{ links: string[]; estateId?: string; finnPdfs: string[] }> {
+  const res = await fetchT(finnUrl, { next: { revalidate: 0 } } as RequestInit);
+  if (!res?.ok) return { links: [], finnPdfs: [] };
   const html = await res.text();
 
-  let link: string | undefined;
-  const m = html.match(/Salgsoppgaven beskriver[\s\S]{0,500}?<a[^>]+href="([^"]+)"/i);
-  if (m) link = m[1];
-  if (!link) {
-    const m2 = html.match(/href="(https?:\/\/[^"]*(?:prospekt|salgsoppgave)[^"]*)"/i);
-    if (m2) link = m2[1];
-  }
-  // Last resort: any external link to a known megler domain (DNB, EM1, Nordvik, Eie, …).
-  // Finn always links out to the broker's own listing page, which hosts the salgsoppgave.
-  if (!link) {
-    const hrefs = html.match(/href="(https?:\/\/[^"]+)"/gi) ?? [];
-    for (const h of hrefs) {
-      const url = h.slice(6, -1);
-      if (MEGLER_DOMAINS.some((d) => url.toLowerCase().includes(d))) { link = url; break; }
-    }
-  }
-  if (link) link = link.replace(/&amp;/g, '&');
+  const links: string[] = [];
+  const push = (u?: string) => {
+    if (!u) return;
+    const clean = u.replace(/&amp;/g, '&').replace(/\\u002[fF]/gi, '/').trim();
+    if (!/^https:\/\//i.test(clean)) return;
+    if (!links.includes(clean)) links.push(clean);
+  };
 
-  let estateId: string | undefined;
-  const e = (link || html).match(/estateId=([0-9a-fA-F-]{36})/);
-  if (e) estateId = e[1];
+  push(html.match(/Salgsoppgaven beskriver[\s\S]{0,500}?<a[^>]+href="([^"]+)"/i)?.[1]);
+  push(html.match(/href="(https?:\/\/[^"]*(?:prospekt|salgsoppgave)[^"]*)"/i)?.[1]);
 
-  return { link, estateId };
+  const known: string[] = [];
+  const others: string[] = [];
+  const seenHost = new Set<string>();
+  for (const h of html.match(/href="(https:\/\/[^"]+)"/gi) ?? []) {
+    const raw = h.slice(6, -1).replace(/&amp;/g, '&');
+    const host = hostOf(raw);
+    if (!host || NON_MEGLER.some((d) => host.includes(d))) continue;
+    if (seenHost.has(host)) continue; // one candidate per brokerage domain
+    seenHost.add(host);
+    (MEGLER_DOMAINS.some((d) => host.includes(d)) ? known : others).push(raw);
+  }
+  known.forEach(push);
+  others.forEach(push);
+
+  const estateId = (links[0] || html).match(/estateId=([0-9a-fA-F-]{36})/)?.[1];
+
+  // Some brokers attach the PDF straight to the Finn ad — cheapest path of all.
+  return { links: links.slice(0, 4), estateId, finnPdfs: extractPdfUrls(html) };
+}
+
+// Try a single brokerage page: digital salgsoppgave, gated GraphQL doc, direct
+// PDF link, or the best-ranked PDFs on the page (more than one, since the
+// top-ranked document is sometimes a nabolagsprofil or an unreadable scan).
+async function resolveFromMegler(link: string, estateId?: string): Promise<{ text: string; pdfUrl: string } | undefined> {
+  const megler = hostOf(link);
+
+  if (megler.includes('dnbeiendom.no')) {
+    const text = await resolveDnbText(link);
+    if (text) return { text: text.slice(0, 200_000), pdfUrl: '' };
+  }
+
+  if (megler.includes('privatmegleren.no')) {
+    const url = await resolvePrivatMegleren(link);
+    const text = url ? await pdfText(url) : undefined;
+    if (text && url) return { text, pdfUrl: url };
+  }
+
+  if (/\.pdf(\?|#|$)/i.test(link)) {
+    const text = await pdfText(link);
+    if (text) return { text, pdfUrl: link };
+  }
+
+  const r = await fetchT(link, { next: { revalidate: 0 } } as RequestInit);
+  if (!r?.ok) return undefined;
+  const html = await r.text();
+
+  const docs = collectDocs(html, estateId).filter((d) => d.score >= 0);
+  const epaper = extractEpaperUrl(html) ? [extractEpaperUrl(html)!] : [];
+  // A confidently-labelled PDF wins; otherwise try the epaper before the
+  // weak/hashed filenames that only scored 0.
+  const candidates = docs[0]?.score > 0
+    ? [docs[0].url, ...epaper, ...docs.slice(1).map((d) => d.url)]
+    : [...epaper, ...docs.map((d) => d.url)];
+
+  for (const url of candidates.slice(0, 4)) {
+    const text = await pdfText(url);
+    if (text) return { text, pdfUrl: url };
+  }
+
+  // No PDF worked, but the page itself may BE the digital salgsoppgave (the
+  // DNB autoprospekt pattern, which several brokers now copy).
+  const text = htmlToText(html);
+  if (text.replace(/\s/g, '').length > 4000 && /tilstandsgrad|vurderte forhold|TG\s?[123]/i.test(text)) {
+    return { text: text.slice(0, 200_000), pdfUrl: '' };
+  }
+  return undefined;
 }
 
 export async function GET(request: Request) {
@@ -219,56 +325,34 @@ export async function GET(request: Request) {
   }
 
   try {
-    const { link, estateId } = await findMeglerLink(finnUrl);
-    if (!link) return Response.json({ found: false, reason: 'no-megler-link' }, { status: 200 });
+    const { links, estateId, finnPdfs } = await findMeglerLinks(finnUrl);
 
-    const megler = new URL(link).hostname.replace(/^www\./, '');
-
-    // DNB: no PDF exists — pull the salgsoppgave text from the digital autoprospekt page.
-    if (megler.includes('dnbeiendom.no')) {
-      const text = await resolveDnbText(link);
-      if (text) return Response.json({ found: true, megler, pdfUrl: '', text: text.slice(0, 200_000) });
+    // 1. PDFs attached straight to the Finn ad — no brokerage hop needed.
+    const direct = finnPdfs
+      .map((url) => ({ url, score: rankPdf(url) }))
+      .filter((d) => d.score >= 0)
+      .sort((a, b) => b.score - a.score);
+    for (const d of direct.slice(0, 3)) {
+      const text = await pdfText(d.url);
+      if (text) return Response.json({ found: true, megler: 'finn.no', pdfUrl: d.url, text });
     }
 
-    // Resolve PDF url — the link is either a direct PDF or a megler prospekt page
-    let pdfUrl: string | undefined;
-    if (megler.includes('privatmegleren.no')) {
-      pdfUrl = await resolvePrivatMegleren(link);
-    } else if (/\.pdf(\?|#|$)/i.test(link)) {
-      pdfUrl = link;
-    } else {
-      const r = await fetch(link, { headers: HEADERS, redirect: 'follow', next: { revalidate: 0 } });
-      if (r.ok) {
-        const html = await r.text();
-        const docs = collectDocs(html, estateId);
-        if (docs.length && docs[0].score > 0) pdfUrl = docs[0].url;
-        if (!pdfUrl) pdfUrl = extractEpaperUrl(html);
-        // Relaxed fallback: hashed filenames (no label, no keyword) score 0 even when
-        // they ARE the salgsoppgave. If nothing scored positive and no epaper, take the
-        // best-ranked PDF that isn't a clearly-wrong document (negative score).
-        if (!pdfUrl && docs.length && docs[0].score >= 0) pdfUrl = docs[0].url;
+    if (!links.length) return Response.json({ found: false, reason: 'no-megler-link' }, { status: 200 });
+
+    // 2. Each brokerage candidate in turn, best-ranked first.
+    for (const link of links) {
+      const hit = await resolveFromMegler(link, estateId);
+      if (hit) {
+        return Response.json({ found: true, megler: hostOf(link), pdfUrl: hit.pdfUrl, text: hit.text });
       }
     }
 
-    if (!pdfUrl) return Response.json({ found: false, reason: 'no-pdf', megler }, { status: 200 });
-
-    // Download + extract text server-side (PDF can be >4.5MB so we never return raw bytes)
-    const pres = await fetch(pdfUrl, { headers: HEADERS, redirect: 'follow' });
-    if (!pres.ok) return Response.json({ found: false, reason: 'pdf-fetch-failed', megler }, { status: 200 });
-    const buf = new Uint8Array(await pres.arrayBuffer());
-    if (buf[0] !== 0x25 || buf[1] !== 0x50) {
-      return Response.json({ found: false, reason: 'not-pdf', megler }, { status: 200 });
-    }
-
-    const pdf = await getDocumentProxy(buf);
-    const { text } = await extractText(pdf, { mergePages: true });
-    const merged = Array.isArray(text) ? text.join('\n') : text;
-    const clean = merged.slice(0, 200_000);
-    if (clean.replace(/\s/g, '').length < 500) {
-      return Response.json({ found: false, reason: 'no-text', megler }, { status: 200 });
-    }
-
-    return Response.json({ found: true, megler, pdfUrl, text: clean });
+    // Nothing readable anywhere — hand the user the brokerage link so the manual
+    // fallback is one click, not a hunt.
+    return Response.json(
+      { found: false, reason: 'no-document', megler: hostOf(links[0]), meglerLink: links[0] },
+      { status: 200 },
+    );
   } catch (err) {
     console.error('salgsoppgave error:', err);
     return Response.json({ found: false, reason: 'error' }, { status: 200 });
