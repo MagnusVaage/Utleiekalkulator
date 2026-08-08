@@ -16,27 +16,27 @@ const geistMono = Geist_Mono({
 const siteUrl = "https://utleiekalkulatoren.no";
 
 export const metadata: Metadata = {
-  title: "Utleiekalkulator – sjekk boligen før du byr | Gratis boliganalyse",
+  title: "Boliganalyse med AI – finn risikoen før du byr | Gratis",
   description:
-    "Utleiekalkulator med gratis boliganalyse: Lim inn Finn-lenken, så går vi gjennom salgsoppgaven på sekunder og regner yield, kontantstrøm og skatt. Ingen registrering.",
+    "Gratis AI-analyse av bolig: Lim inn Finn-lenken, så leser vi salgsoppgaven og tilstandsrapporten på sekunder og viser risikofunn, spørsmål til megler, yield og kontantstrøm.",
   keywords: [
+    "boliganalyse",
+    "analyse av salgsoppgave",
+    "tilstandsrapport analyse",
+    "sjekke bolig før visning",
+    "TG2 TG3 funn",
+    "spørsmål til megler",
     "utleiekalkulator",
-    "utleiebolig kalkulator",
-    "lønner det seg å leie ut",
     "yield utleiebolig",
     "kontantstrøm bolig",
-    "brutto yield bolig",
-    "rentefradrag utleie",
-    "finn.no kalkulator",
     "eiendomsanalyse",
-    "utleieinvestering norge",
   ],
   authors: [{ name: "Utleiekalkulator" }],
   creator: "Utleiekalkulator",
   metadataBase: new URL(siteUrl),
   alternates: { canonical: "/" },
   openGraph: {
-    title: "Utleiekalkulator – sjekk boligen før du byr | Gratis boliganalyse",
+    title: "Boliganalyse med AI – finn risikoen før du byr | Gratis",
     description:
       "Skal du kjøpe bolig? Lim inn Finn-lenken, så går vi gjennom salgsoppgaven for deg på sekunder. Helt gratis.",
     url: siteUrl,
@@ -46,7 +46,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Utleiekalkulator – sjekk boligen før du byr | Gratis boliganalyse",
+    title: "Boliganalyse med AI – finn risikoen før du byr | Gratis",
     description:
       "Skal du kjøpe bolig? Lim inn Finn-lenken, så går vi gjennom salgsoppgaven for deg på sekunder. Helt gratis.",
   },
