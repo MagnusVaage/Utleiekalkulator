@@ -28,7 +28,7 @@ export default function Page() {
       <header className="px-4 sm:px-6 py-4">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2">
-            <img src="/logo.svg" alt="" className="w-7 h-7" />
+            <img src="/logo.svg" alt="Utleiekalkulator logo"className="w-7 h-7" />
             <span className="font-bold text-sm">Utleiekalkulator</span>
           </Link>
           <Link href="/" className="text-sm text-slate-600 hover:text-slate-900 transition-colors">← Til forsiden</Link>
@@ -36,7 +36,7 @@ export default function Page() {
       </header>
 
       <main className="max-w-4xl mx-auto px-4 pb-20">
-        <h1 className="text-3xl sm:text-4xl font-black tracking-tight mb-2 mt-6">Kalkulatorer</h1>
+        <h1 className="text-3xl sm:text-4xl font-black tracking-tight mb-2 mt-6">Boligkalkulatorer</h1>
         <p className="text-slate-500 mb-8 leading-relaxed max-w-2xl">
           Gratis og enkle kalkulatorer for deg som skal kjøpe bolig eller få oversikt over økonomien. Ingen registrering.
         </p>

@@ -58,29 +58,44 @@ function Fact({ label, value }: { label: string; value: string }) {
   );
 }
 
-function Carousel({ images }: { images: string[] }) {
+function Carousel({ images, alt }: { images: string[]; alt?: string }) {
   const [i, setI] = useState(0);
-  if (!images.length) return null;
-  const n = images.length;
+  // Not every photo exists in the 1280w variant the API asks for — fall back
+  // to the original size on load error, and drop URLs that fail entirely so
+  // the carousel never shows an empty black frame.
+  const [fallback, setFallback] = useState<Record<string, string>>({});
+  const [dead, setDead] = useState<string[]>([]);
+  const live = images.filter(u => !dead.includes(u));
+  if (!live.length) return null;
+  const n = live.length;
+  const idx = Math.min(i, n - 1);
+  const cur = live[idx];
+  const onError = () => {
+    if (!fallback[cur] && cur.includes('/dynamic/1280w/')) {
+      setFallback(f => ({ ...f, [cur]: cur.replace('/dynamic/1280w/', '/dynamic/default/') }));
+    } else {
+      setDead(d => [...d, cur]);
+    }
+  };
   return (
     <div className="relative h-56 sm:h-72 rounded-xl overflow-hidden mb-5" style={{ background: '#000' }}>
-      <img src={images[i]} alt="" className="w-full h-full object-cover" />
+      <img src={fallback[cur] || cur} onError={onError} alt={alt ? `${alt} – bilde ${idx + 1} av ${n}` : 'Bilde av boligen'} className="w-full h-full object-cover" />
       {n > 1 && (
         <>
-          <button onClick={() => setI((i - 1 + n) % n)} aria-label="Forrige"
+          <button onClick={() => setI((idx - 1 + n) % n)} aria-label="Forrige"
             className="absolute left-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full flex items-center justify-center text-white"
             style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }}>‹</button>
-          <button onClick={() => setI((i + 1) % n)} aria-label="Neste"
+          <button onClick={() => setI((idx + 1) % n)} aria-label="Neste"
             className="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full flex items-center justify-center text-white"
             style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }}>›</button>
           <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
-            {images.map((_, k) => (
+            {live.map((_, k) => (
               <span key={k} className="w-1.5 h-1.5 rounded-full transition-all"
-                style={{ background: k === i ? '#fff' : 'rgba(255,255,255,0.4)' }} />
+                style={{ background: k === idx ? '#fff' : 'rgba(255,255,255,0.4)' }} />
             ))}
           </div>
           <span className="absolute top-3 right-3 text-xs font-medium px-2 py-1 rounded-md text-white"
-            style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }}>{i + 1} / {n}</span>
+            style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }}>{idx + 1} / {n}</span>
         </>
       )}
     </div>
@@ -110,6 +125,7 @@ export default function AnalyseClient({ finn, initialMetric, initialRisk, initia
   // risk flow: idle → fetching (auto) → analysing → done | manual
   const [riskState, setRiskState] = useState<'idle' | 'fetching' | 'analysing' | 'done' | 'manual'>(initialRisk ? 'done' : 'idle');
   const [autoMegler, setAutoMegler] = useState(initialMegler);
+  const [meglerLink, setMeglerLink] = useState('');
   const [pdfUrl, setPdfUrl] = useState(initialPdfUrl);
   const [autoFetched, setAutoFetched] = useState(!!initialRisk);
   const [risk, setRisk] = useState<RapportResult | null>(initialRisk);
@@ -171,6 +187,7 @@ export default function AnalyseClient({ finn, initialMetric, initialRisk, initia
           }
         } else {
           setAutoMegler(data.megler || '');
+          setMeglerLink(data.meglerLink || '');
           setRiskState('manual');
         }
       } catch {
@@ -229,7 +246,7 @@ export default function AnalyseClient({ finn, initialMetric, initialRisk, initia
       <header className="px-4 sm:px-6 py-4 sticky top-0 z-20 backdrop-blur" style={{ background: 'rgba(247,248,250,0.9)', borderBottom: '1px solid rgba(15,23,42,0.08)' }}>
         <div className="max-w-5xl mx-auto flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2">
-            <img src="/logo.svg" alt="" className="w-7 h-7" />
+            <img src="/logo.svg" alt="Utleiekalkulator logo"className="w-7 h-7" />
             <span className="font-bold text-sm">Utleiekalkulator</span>
           </Link>
           <Link href="/" className="text-sm font-semibold text-white px-4 py-2 rounded-lg transition-all hover:bg-blue-500 shadow-sm" style={{ background: '#2563eb' }}>+ Ny analyse</Link>
@@ -254,7 +271,7 @@ export default function AnalyseClient({ finn, initialMetric, initialRisk, initia
         {/* ── Property hero ── */}
         {metric && (
           <div className="rounded-2xl p-5 sm:p-6 mb-6" style={card}>
-            <Carousel images={metric.images || []} />
+            <Carousel images={metric.images || []} alt={metric.address || metric.title} />
 
             <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
               <div>
@@ -430,8 +447,16 @@ export default function AnalyseClient({ finn, initialMetric, initialRisk, initia
             <p className="text-slate-600 text-sm mb-4">
               {!finn
                 ? 'Lim inn Finn-lenken, så henter vi salgsoppgaven automatisk og gir deg risikofunn (TG1/TG2/TG3) + spørsmål til megler. Eller last opp PDF-en selv.'
-                : 'Last opp salgsoppgaven (PDF) fra Finn-annonsen, så leser AI-en tilstandsrapporten og gir deg risikofunn + spørsmål til megler.'}
+                : 'Denne annonsen har salgsoppgaven bak en nedlasting vi ikke kommer forbi. Hent PDF-en og slipp den inn under, så leser AI-en tilstandsrapporten og gir deg risikofunn + spørsmål til megler.'}
             </p>
+
+            {finn && meglerLink && (
+              <a href={meglerLink} target="_blank" rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 mb-4 px-4 py-2.5 rounded-xl text-sm font-semibold text-blue-700 transition-transform hover:scale-[1.02]"
+                style={{ background: 'rgba(37,99,235,0.08)', border: '1px solid rgba(37,99,235,0.25)' }}>
+                Åpne salgsoppgaven hos {autoMegler || 'megler'} <span>↗</span>
+              </a>
+            )}
 
             {!finn && (
               <>

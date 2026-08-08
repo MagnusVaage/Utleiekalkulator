@@ -5,7 +5,7 @@ export default function Loading() {
         style={{ background: '#ffffff', border: '1px solid rgba(15,23,42,0.08)', boxShadow: '0 10px 40px rgba(37,99,235,0.12), 0 0 0 1px rgba(37,99,235,0.10)' }}>
         <div className="relative mx-auto mb-5 w-14 h-14 flex items-center justify-center">
           <span className="absolute inset-0 animate-spin rounded-full border-2 border-blue-100 border-t-blue-600" />
-          <img src="/logo.svg" alt="" className="w-7 h-7" />
+          <img src="/logo.svg" alt="Utleiekalkulator logo"className="w-7 h-7" />
         </div>
         <p className="font-bold text-slate-900">Analyserer boligen…</p>
         <p className="text-sm text-slate-500 mt-2 leading-relaxed">

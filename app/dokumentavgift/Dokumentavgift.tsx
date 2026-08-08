@@ -43,7 +43,7 @@ export default function Dokumentavgift() {
       <header className="px-4 sm:px-6 py-4">
         <div className="max-w-3xl mx-auto flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2">
-            <img src="/logo.svg" alt="" className="w-7 h-7" />
+            <img src="/logo.svg" alt="Utleiekalkulator logo"className="w-7 h-7" />
             <span className="font-bold text-sm">Utleiekalkulator</span>
           </Link>
           <Link href="/kalkulatorer" className="text-sm text-slate-600 hover:text-slate-900 transition-colors">← Alle kalkulatorer</Link>
@@ -114,6 +114,24 @@ export default function Dokumentavgift() {
             Analyser salgsoppgaven gratis →
           </Link>
         </div>
+
+        {/* FAQ / SEO-tekst */}
+        <section className="mt-14">
+          <h2 className="text-2xl font-bold text-slate-900 mb-6">Vanlige spørsmål om dokumentavgift</h2>
+          <div className="flex flex-col gap-4">
+            {[
+              { q: 'Hva er dokumentavgift?', a: 'Dokumentavgift er en statlig avgift på 2,5 % av boligens markedsverdi som betales når skjøtet tinglyses ved kjøp av selveierbolig. På en bolig til 4 millioner kroner utgjør den 100 000 kroner — ofte den klart største omkostningen ved boligkjøpet.' },
+              { q: 'Hvorfor slipper borettslag dokumentavgift?', a: 'Når du kjøper en borettslags- eller aksjeleilighet, kjøper du en andel i borettslaget — ikke en tinglyst eiendom. Da tinglyses ikke noe skjøte, og det påløper ingen dokumentavgift. Det gjør omkostningene vesentlig lavere enn ved selveier.' },
+              { q: 'Hva med nybygg?', a: 'For nyoppførte boliger på egen tomt betales dokumentavgift normalt bare av tomteverdien, ikke av hele kjøpesummen. Det kan bety titusener i sparte omkostninger sammenlignet med brukt selveierbolig.' },
+              { q: 'Hva er tinglysingsgebyr?', a: 'Tinglysingsgebyret er et fast gebyr til Kartverket for å tinglyse skjøtet, og eventuelt ett til for pantedokumentet hvis du tar opp boliglån. Gebyrene kommer i tillegg til dokumentavgiften.' },
+            ].map(({ q, a }) => (
+              <div key={q} className="rounded-2xl p-5" style={card}>
+                <h3 className="font-semibold text-slate-900 mb-2 text-sm">{q}</h3>
+                <p className="text-sm text-slate-500 leading-relaxed">{a}</p>
+              </div>
+            ))}
+          </div>
+        </section>
 
         <div className="mt-10">
           <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3">Flere kalkulatorer</p>

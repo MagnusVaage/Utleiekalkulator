@@ -40,7 +40,7 @@ export default function BoliglanKalkulator() {
 
   const laane = useMemo(() => {
     const maks = Math.max(0, inntekt * 5 - gjeld); // 5×-regelen (utlånsforskriften)
-    const bolig = maks / 0.85; // med 15 % egenkapital
+    const bolig = maks / 0.9; // med 10 % egenkapital (krav senket fra 15 % i 2025)
     return { maks, bolig };
   }, [inntekt, gjeld]);
 
@@ -60,7 +60,7 @@ export default function BoliglanKalkulator() {
       <header className="px-4 sm:px-6 py-4">
         <div className="max-w-3xl mx-auto flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2">
-            <img src="/logo.svg" alt="" className="w-7 h-7" />
+            <img src="/logo.svg" alt="Utleiekalkulator logo"className="w-7 h-7" />
             <span className="font-bold text-sm">Utleiekalkulator</span>
           </Link>
           <Link href="/kalkulatorer" className="text-sm text-slate-600 hover:text-slate-900 transition-colors">← Alle kalkulatorer</Link>
@@ -93,7 +93,7 @@ export default function BoliglanKalkulator() {
             <div className="mt-6 pt-6 text-center" style={{ borderTop: '1px solid rgba(15,23,42,0.08)' }}>
               <p className="text-sm text-slate-500">Du kan trolig låne rundt</p>
               <p className="text-4xl font-black text-blue-600 my-1">{fmt(laane.maks)} kr</p>
-              <p className="text-sm text-slate-500">Det rekker til en bolig på ca. <strong className="text-slate-700">{fmt(laane.bolig)} kr</strong> med 15 % egenkapital.</p>
+              <p className="text-sm text-slate-500">Det rekker til en bolig på ca. <strong className="text-slate-700">{fmt(laane.bolig)} kr</strong> med 10 % egenkapital.</p>
             </div>
             <p className="text-xs text-slate-400 mt-5 leading-relaxed">
               Basert på «5×-regelen»: lånet kan normalt ikke overstige fem ganger samlet årsinntekt. Banken vurderer i tillegg
@@ -133,9 +133,9 @@ export default function BoliglanKalkulator() {
               <Result label="Etter skattefradrag" value={`${fmt(koste.etterFradrag)} kr`} sub="22 % rentefradrag" />
               <Result label="Totalt å betale" value={`${fmt(koste.total)} kr`} />
             </div>
-            {koste.ekPct < 15 && koste.laan > 0 && (
+            {koste.ekPct < 10 && koste.laan > 0 && (
               <p className="text-xs text-amber-600 mt-4">
-                Egenkapitalen din er {koste.ekPct.toFixed(0)} % — bankene krever normalt minst 15 %.
+                Egenkapitalen din er {koste.ekPct.toFixed(0)} % — bankene krever normalt minst 10 %.
               </p>
             )}
             <p className="text-xs text-slate-400 mt-4 leading-relaxed">
@@ -144,12 +144,38 @@ export default function BoliglanKalkulator() {
           </div>
         )}
 
+        {/* FAQ / SEO-tekst */}
+        <section className="mt-14">
+          <h2 className="text-2xl font-bold text-slate-900 mb-3">Vanlige spørsmål om boliglån</h2>
+          <p className="text-sm text-slate-500 leading-relaxed mb-6 max-w-2xl">
+            Boliglånskalkulatoren gir deg et veiledende svar på hvor mye du kan låne, og hva boliglånet vil koste per
+            måned med renten og nedbetalingstiden du velger. Tallene bygger på reglene i utlånsforskriften og er ikke et
+            lånetilbud — banken gjør alltid en individuell vurdering.
+          </p>
+          <div className="flex flex-col gap-4">
+            {[
+              { q: 'Hvor mye kan jeg låne til bolig?', a: 'Hovedregelen i utlånsforskriften er at samlet gjeld ikke kan overstige fem ganger brutto årsinntekt. Har du 600 000 kr i inntekt og ingen gjeld fra før, kan du normalt låne inntil 3 millioner kroner. Banken vurderer i tillegg at du tåler en renteøkning på 3 prosentpoeng.' },
+              { q: 'Hvor mye egenkapital trenger jeg?', a: 'Kravet til egenkapital er normalt 10 % av kjøpesummen — det ble senket fra 15 % i 2025, da maksimal belåningsgrad økte til 90 %. På en bolig til 3 millioner kroner tilsvarer det 300 000 kroner. Husk at omkostninger som dokumentavgift kommer i tillegg.' },
+              { q: 'Hva er forskjellen på nominell og effektiv rente?', a: 'Nominell rente er selve prisen på lånet, mens effektiv rente også inkluderer gebyrer og effekten av at renten betales månedlig. Det er den effektive renten du bør sammenligne når du sjekker tilbud fra flere banker.' },
+              { q: 'Hva betyr rentefradraget for meg?', a: 'Du får fradrag i skatten for 22 % av rentekostnadene på boliglånet. Betaler du 10 000 kr i renter i måneden, får du i praksis 2 200 kr tilbake via skatten. Kalkulatoren viser månedskostnaden både før og etter fradraget.' },
+              { q: 'Bør jeg velge annuitetslån eller serielån?', a: 'Annuitetslån har lik betaling hver måned og er det vanligste for boliglån. Serielån har fast avdrag og synkende rentekostnad — dyrere i starten, men billigere totalt. Kalkulatoren regner med annuitetslån.' },
+            ].map(({ q, a }) => (
+              <div key={q} className="rounded-2xl p-5" style={card}>
+                <h3 className="font-semibold text-slate-900 mb-2 text-sm">{q}</h3>
+                <p className="text-sm text-slate-500 leading-relaxed">{a}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
         {/* Subtil kryss-lenking */}
         <div className="mt-10">
-          <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3">Flere kalkulatorer</p>
+          <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3">Flere kalkulatorer og guider</p>
           <div className="flex flex-wrap gap-2">
             <Link href="/kalkulatorer" className="text-sm px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition-colors" style={card}>🧮 Alle kalkulatorer</Link>
             <Link href="/kalkulator" className="text-sm px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition-colors" style={card}>📊 Utleiekalkulator</Link>
+            <Link href="/egenkapitalkrav" className="text-sm px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition-colors" style={card}>💰 Egenkapitalkrav</Link>
+            <Link href="/renteutvikling-2026" className="text-sm px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition-colors" style={card}>📈 Renteutvikling 2026</Link>
           </div>
         </div>
       </main>

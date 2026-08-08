@@ -1,5 +1,20 @@
+import type { Metadata } from 'next';
 import { headers } from 'next/headers';
 import AnalyseClient, { type Metric } from './AnalyseClient';
+
+export const metadata: Metadata = {
+  title: 'Boliganalyse av Finn-annonse – AI sjekker salgsoppgaven | Utleiekalkulator',
+  description:
+    'Lim inn en Finn-lenke og få en gratis boliganalyse på sekunder: TG2- og TG3-funn i salgsoppgaven, spørsmål til megler, yield og kontantstrøm. Ingen registrering.',
+  keywords: ['boliganalyse', 'salgsoppgave analyse', 'finn.no boliganalyse', 'tilstandsrapport TG2 TG3', 'sjekke bolig før budrunde'],
+  alternates: { canonical: '/analyse' },
+  openGraph: {
+    title: 'Boliganalyse av Finn-annonse – AI sjekker salgsoppgaven',
+    description: 'Lim inn en Finn-lenke og få gratis boliganalyse på sekunder: TG-funn, meglerspørsmål, yield og kontantstrøm.',
+    url: 'https://utleiekalkulatoren.no/analyse',
+    type: 'website',
+  },
+};
 
 // Allow time for the server-side AI analysis to complete.
 export const maxDuration = 60;
