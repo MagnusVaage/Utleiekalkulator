@@ -1,4 +1,4 @@
-# Låsbytte Sandnes – lead-nettside
+# Låsesmed Sandnes – lead-nettside (låsesmedsandnes.no)
 
 Frittstående statisk lead-side for låsbytte/sylinderskifte i Sandnes,
 med telefonnummer som primær CTA. Én HTML-fil uten avhengigheter – kan
@@ -19,8 +19,10 @@ deployes hvor som helst (Netlify, Vercel, Cloudflare Pages, webhotell).
    [formspree.io](https://formspree.io) og erstatt `DIN-SKJEMA-ID` i
    `FORM_ENDPOINT` nederst i `index.html`.
 
-3. **Domene:** Erstatt `EKSEMPEL-DOMENE.no` i `<link rel="canonical">`
-   og i Locksmith-schemaet med det faktiske domenet.
+3. **Domene:** ✅ Satt til `låsesmedsandnes.no` (canonical, og:url og
+   Locksmith-schema). NB: I DNS/hosting-oppsett brukes punycode-formen
+   `xn--lsesmedsandnes-lib.no` – de fleste registrarer og hosting-
+   tjenester (Netlify m.fl.) viser/godtar denne automatisk.
 
 ## SEO som er på plass
 
