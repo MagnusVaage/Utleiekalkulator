@@ -32,6 +32,7 @@ export default function Footer() {
             <li><Link href="/om-oss" className="text-slate-300 hover:text-white transition-colors">Om oss og kontakt</Link></li>
             <li><Link href="/mine-boliger" className="text-slate-300 hover:text-white transition-colors">Mine boliger</Link></li>
             <li><Link href="/personvern" className="text-slate-300 hover:text-white transition-colors">Personvern</Link></li>
+            <li><a href="https://www.låsesmedsandnes.no/" className="text-slate-300 hover:text-white transition-colors">Låsesmed i Sandnes</a></li>
           </ul>
         </div>
       </div>
