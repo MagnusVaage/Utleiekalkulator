@@ -1,0 +1,4 @@
+httpx>=0.27
+# selectolax er kun for adaptere som må falle tilbake på HTML-parsing —
+# bruk JSON-API der det finnes.
+selectolax>=0.3
