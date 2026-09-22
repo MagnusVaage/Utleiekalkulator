@@ -1,4 +1,4 @@
-# Vasslinja – lead-nettside for rørlegger i Ålesund (vasslinja.no)
+# Stoppekranen – lead-nettside for rørlegger i Ålesund (stoppekranen.no)
 
 Frittstående statisk lead-side for rørleggeroppdrag i Ålesund og omegn,
 med telefonnummer som primær CTA. Én HTML-fil uten avhengigheter – kan
@@ -23,16 +23,20 @@ Samme oppsett som `laasbytte-sandnes`.
    `FORM_ENDPOINT` nederst i `index.html`. Skjemaet sender også feltet
    `oppdrag` (type jobb), så leadene kan sorteres etter hastegrad.
 
-3. **Domene:** Satt til `vasslinja.no` (canonical, og:url og
+3. **Domene:** Satt til `stoppekranen.no` (canonical, og:url og
    Plumber-schema). Rene ASCII-bokstaver, så ingen punycode å ta hensyn
    til. Sjekk at domenet er ledig hos Norid før du låser navnet.
 
 ## Navn
 
-«Vasslinja» – nynorsk/sunnmørsk «vass» (vann) + «linja» (røret,
-forbindelsen). Stedsnavn er bevisst holdt utenfor navnet, mens
-søkeordet «rørlegger Ålesund» ligger i `<title>`, H1 og brødtekst der
-det faktisk gir SEO-effekt.
+«Stoppekranen» – ordet alle kjenner, og det første man skal gjøre ved
+en lekkasje. Rent ASCII i domenet, så ingen punycode å ta hensyn til.
+Slagordet «Steng kranen. Ring Stoppekranen.» ligger i bunn-CTA-en og
+spiller på at brødteksten og FAQ-en allerede gir det samme rådet.
+
+Stedsnavn er bevisst holdt utenfor navnet, mens søkeordet «rørlegger
+Ålesund» ligger i `<title>`, H1 og brødtekst der det faktisk gir
+SEO-effekt.
 
 ## Tjenester som dekkes
 
@@ -46,10 +50,10 @@ borettslag, sameier og næringsbygg.
 
 ## Formuleringer – hold deg til disse
 
-Siden hevder **ikke** at Vasslinja selv har mesterbrev, sentral
+Siden hevder **ikke** at Stoppekranen selv har mesterbrev, sentral
 godkjenning eller kjedetilknytning. Den sier at oppdraget utføres av
 godkjent rørleggerbedrift med fagbrev, og footeren opplyser at
-Vasslinja formidler oppdrag videre. Det holder siden ærlig uten å navngi
+Stoppekranen formidler oppdrag videre. Det holder siden ærlig uten å navngi
 hvem som utfører jobben. Ikke legg til konkrete garantier, medlemskap
 eller antall år i bransjen som ikke kan dokumenteres.
 
@@ -69,6 +73,6 @@ registrer siden i Google Search Console, og skaff lokale omtaler/lenker.
 
 ## Deploy (eksempel med Netlify)
 
-Dra og slipp `rorlegger-vasslinja`-mappen på
+Dra og slipp `rorlegger-stoppekranen`-mappen på
 [app.netlify.com/drop](https://app.netlify.com/drop), eller pek Netlify
-mot repoet med publish directory `rorlegger-vasslinja`.
+mot repoet med publish directory `rorlegger-stoppekranen`.
