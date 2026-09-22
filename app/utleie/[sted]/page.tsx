@@ -113,6 +113,9 @@ export default async function Page({ params }: { params: Promise<{ sted: string 
         <h2 className="text-2xl font-bold text-white mt-12 mb-4">Hva bør du sjekke før du kjøper {iOslo ? "på" : "i"} {s.navn}?</h2>
         <ul className="text-slate-300 leading-relaxed flex flex-col gap-3 mb-6 list-disc pl-5">
           <li><strong className="text-white">Tilstanden på boligen:</strong> TG2- og TG3-funn i tilstandsrapporten kan koste mer enn et helt års leieinntekter. Les salgsoppgaven nøye — eller <Link href="/analyse" className="text-blue-400 hover:text-blue-300 font-semibold">la AI-en lese den for deg</Link>.</li>
+          {s.slug === "alesund" && (
+            <li><strong className="text-white">Rør og bad:</strong> gamle rør og bad uten dokumentasjon er blant de vanligste TG-funnene. Få en <a href="https://xn--rrfagmannen-ggb.no/" className="text-blue-400 hover:text-blue-300 font-semibold">rørlegger i Ålesund</a> til å vurdere dem før du legger inn bud.</li>
+          )}
           <li><strong className="text-white">Felleskostnader og fellesgjeld:</strong> spiser direkte av kontantstrømmen, og varierer mye mellom sameier og borettslag.</li>
           <li><strong className="text-white">Skatt:</strong> leieinntekter fra sekundærbolig beskattes med 22 %, men du får fradrag for renter og kostnader. Se <Link href="/skatt-leieinntekter" className="text-blue-400 hover:text-blue-300 font-semibold">guiden om skatt på leieinntekter</Link>.</li>
           <li><strong className="text-white">Leiemarkedet lokalt:</strong> nærhet til studiested, kollektiv og arbeidsplasser avgjør hvor lett boligen leies ut — og til hvilken pris.</li>
