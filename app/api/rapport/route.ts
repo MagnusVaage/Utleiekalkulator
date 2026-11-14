@@ -139,6 +139,9 @@ export async function POST(request: Request) {
             ],
             temperature: 0.2,
             max_tokens: model.maxTokens,
+            // gpt-oss reasons before answering, and those tokens count against
+            // max_tokens — keep it short so the JSON isn't cut off mid-object.
+            reasoning_effort: 'low',
             response_format: { type: 'json_object' },
           }),
           signal: ctrl.signal,
