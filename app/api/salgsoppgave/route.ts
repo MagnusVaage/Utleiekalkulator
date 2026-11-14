@@ -311,7 +311,16 @@ async function resolveFromMegler(link: string, estateId?: string): Promise<{ tex
   // Read the top candidates in parallel and prefer the one that actually reads
   // like a tilstandsrapport — the first readable PDF is often an insurance
   // leaflet, nabolagsprofil or energiattest.
-  const top = [...new Set(candidates)].slice(0, 8);
+  const unique = [...new Set(candidates)];
+
+  // Confidently-labelled top document (e.g. Aktiv "Salgsoppgave.PDF"): read it
+  // alone first — big salgsoppgaver downloaded 8-at-a-time can blow the 60s budget.
+  if (docs[0]?.score >= 8 && unique[0] === docs[0].url) {
+    const first = await pdfText(docs[0].url);
+    if (first && reportScore(first) >= REPORT_MIN) return { text: first, pdfUrl: docs[0].url };
+  }
+
+  const top = unique.slice(0, 8);
   const texts = await Promise.all(top.map((url) => pdfText(url)));
   const pdfs = top
     .map((url, i) => ({ url, text: texts[i], score: texts[i] ? reportScore(texts[i]!) : -1 }))
