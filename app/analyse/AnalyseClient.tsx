@@ -130,6 +130,7 @@ export default function AnalyseClient({ finn, initialMetric, initialRisk, initia
   const [autoFetched, setAutoFetched] = useState(!!initialRisk);
   const [risk, setRisk] = useState<RapportResult | null>(initialRisk);
   const [riskErr, setRiskErr] = useState('');
+  const [meglerInput, setMeglerInput] = useState('');
 
   // manual upload
   const [file, setFile] = useState<File | null>(null);
@@ -218,6 +219,28 @@ export default function AnalyseClient({ finn, initialMetric, initialRisk, initia
       setRisk(r); setRiskState('done');
     } catch {
       // Generic, non-technical message — never expose the underlying error.
+      setRiskErr('Kunne ikke fullføre analysen akkurat nå. Prøv igjen om et øyeblikk.');
+    } finally { setAnalysing(false); setStep(''); }
+  };
+
+  // User pasted the broker's listing link — fetch the salgsoppgave from there.
+  const analyseMeglerLink = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!meglerInput.trim()) return;
+    setAnalysing(true); setRiskErr('');
+    try {
+      setStep('Henter salgsoppgaven…');
+      const res = await fetch(`/api/salgsoppgave?megler=${encodeURIComponent(meglerInput.trim())}`);
+      const data = await res.json();
+      if (!data.found || !data.text) {
+        setRiskErr('Fant ikke salgsoppgaven på den lenken. Last ned PDF-en og slipp den inn under.');
+        return;
+      }
+      setAutoMegler(data.megler || ''); setPdfUrl(data.pdfUrl || '');
+      setStep('AI analyserer salgsoppgaven…');
+      const r = await runRapport(data.text);
+      setRisk(r); setRiskState('done');
+    } catch {
       setRiskErr('Kunne ikke fullføre analysen akkurat nå. Prøv igjen om et øyeblikk.');
     } finally { setAnalysing(false); setStep(''); }
   };
@@ -447,7 +470,7 @@ export default function AnalyseClient({ finn, initialMetric, initialRisk, initia
             <p className="text-slate-600 text-sm mb-4">
               {!finn
                 ? 'Lim inn Finn-lenken, så henter vi salgsoppgaven automatisk og gir deg risikofunn (TG1/TG2/TG3) + spørsmål til megler. Eller last opp PDF-en selv.'
-                : 'Denne annonsen har salgsoppgaven bak en nedlasting vi ikke kommer forbi. Hent PDF-en og slipp den inn under, så leser AI-en tilstandsrapporten og gir deg risikofunn + spørsmål til megler.'}
+                : 'Vi fikk ikke hentet salgsoppgaven automatisk. Lim inn lenken til boligen hos megleren (fra «Se salgsoppgave» i Finn-annonsen), eller last opp PDF-en, så leser AI-en tilstandsrapporten og gir deg risikofunn + spørsmål til megler.'}
             </p>
 
             {finn && meglerLink && (
@@ -456,6 +479,27 @@ export default function AnalyseClient({ finn, initialMetric, initialRisk, initia
                 style={{ background: 'rgba(37,99,235,0.08)', border: '1px solid rgba(37,99,235,0.25)' }}>
                 Åpne salgsoppgaven hos {autoMegler || 'megler'} <span>↗</span>
               </a>
+            )}
+
+            {finn && (
+              <>
+                <form onSubmit={analyseMeglerLink} className="flex flex-col sm:flex-row gap-2 mb-4">
+                  <input value={meglerInput} onChange={e => setMeglerInput(e.target.value)} required type="url" inputMode="url"
+                    placeholder="Lim inn lenken til boligen hos megleren…"
+                    className="flex-1 px-4 py-3 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/30"
+                    style={{ background: '#f8fafc', border: '1px solid rgba(15,23,42,0.12)' }} />
+                  <button type="submit" disabled={analysing}
+                    className="px-5 py-3 rounded-xl font-bold text-white whitespace-nowrap disabled:opacity-40 transition-transform hover:scale-[1.02]"
+                    style={{ background: 'linear-gradient(135deg,#2563eb,#1d4ed8)' }}>
+                    Hent salgsoppgave →
+                  </button>
+                </form>
+                <div className="flex items-center gap-3 mb-4">
+                  <span className="h-px flex-1" style={{ background: 'rgba(15,23,42,0.1)' }} />
+                  <span className="text-xs text-slate-400 font-medium">eller last opp PDF</span>
+                  <span className="h-px flex-1" style={{ background: 'rgba(15,23,42,0.1)' }} />
+                </div>
+              </>
             )}
 
             {!finn && (
