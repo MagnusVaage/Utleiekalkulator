@@ -102,13 +102,23 @@ function collectDocs(html: string, estateId?: string): Doc[] {
     if (byId.length) urls = byId;
   }
 
-  return urls
-    .map((url) => {
-      const label = labelMap.get(fileName(url)) ?? '';
-      const score = Math.max(rankLabel(label), rankPdf(url));
-      return { url, label, score };
-    })
-    .sort((a, b) => b.score - a.score);
+  const docs = urls.map((url) => {
+    const label = labelMap.get(fileName(url)) ?? '';
+    const score = Math.max(rankLabel(label), rankPdf(url));
+    return { url, label, score };
+  });
+
+  // Reeltime/Webtop digital salgsoppgaver (Mekleriet, PrivatMegleren-partners)
+  // list documents as JSON {"description":"Tilstandsrapport","url":".../document/<id>"}
+  // with no .pdf in the URL, so the scan above misses them.
+  const unescaped = html.replace(/\\"/g, '"').replace(/\\u002[fF]/gi, '/');
+  const jRe = /"description"\s*:\s*"([^"]+)"[^{}]{0,200}?"url"\s*:\s*"(https:\/\/[^"]+\/document\/[^"]+)"/gi;
+  let m: RegExpExecArray | null;
+  while ((m = jRe.exec(unescaped)) !== null) {
+    if (!docs.some((d) => d.url === m![2])) docs.push({ url: m[2], label: m[1], score: rankLabel(m[1]) });
+  }
+
+  return docs.sort((a, b) => b.score - a.score);
 }
 
 // PrivatMegleren gates the salgsoppgave behind a lead-capture form, but their GraphQL backend
