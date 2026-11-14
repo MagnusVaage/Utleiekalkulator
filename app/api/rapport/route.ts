@@ -88,10 +88,11 @@ function keyOf(s: string): string {
 // input + system prompt, so a long findings list (old, large homes produce many
 // TG2/TG3) can finish the JSON instead of being truncated mid-object — Groq's
 // strict json_object validator returns 400 json_validate_failed on truncation.
+// Groq shut down llama-3.3-70b-versatile and llama-3.1-8b-instant (16.08.2026);
+// gpt-oss-120b / gpt-oss-20b are Groq's recommended replacements.
 const MODELS = [
-  { name: 'llama-3.3-70b-versatile', inputChars: 18_000, maxTokens: 4000 }, // TPM 12k
   { name: 'openai/gpt-oss-120b', inputChars: 10_000, maxTokens: 3000 }, // TPM 8k
-  { name: 'llama-3.1-8b-instant', inputChars: 5_500, maxTokens: 2200 }, // TPM 6k
+  { name: 'openai/gpt-oss-20b', inputChars: 6_000, maxTokens: 2500 },
 ];
 
 export async function POST(request: Request) {
