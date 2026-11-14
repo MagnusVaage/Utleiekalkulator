@@ -233,9 +233,11 @@ async function resolveDnbText(link: string): Promise<string | undefined> {
 // Finn CTA, then document-shaped URLs, then known brokerages, then any other
 // external site. Returning a ranked LIST rather than one link matters — when the
 // first candidate is a dead end we simply try the next instead of giving up.
-async function findMeglerLinks(finnUrl: string): Promise<{ links: string[]; estateId?: string; finnPdfs: string[] }> {
+async function findMeglerLinks(finnUrl: string): Promise<{ links: string[]; estateId?: string; finnPdfs: string[]; blocked?: boolean }> {
   const res = await fetchT(finnUrl, { next: { revalidate: 0 } } as RequestInit);
-  if (!res?.ok) return { links: [], finnPdfs: [] };
+  // Finn answers 403 to most datacenter IPs (bot protection) — report it so the
+  // client can ask for the megler link instead of saying "no document".
+  if (!res?.ok) return { links: [], finnPdfs: [], blocked: !res || res.status === 403 || res.status === 429 };
   const html = await res.text();
 
   const links: string[] = [];
@@ -320,12 +322,30 @@ async function resolveFromMegler(link: string, estateId?: string): Promise<{ tex
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const finnUrl = searchParams.get('url');
+  const meglerUrl = searchParams.get('megler');
+
+  // Direct megler link (the user pasted the broker's listing page) — skips Finn entirely.
+  if (meglerUrl) {
+    if (!/^https:\/\//i.test(meglerUrl) || hostOf(meglerUrl).includes('finn.no')) {
+      return Response.json({ found: false, reason: 'invalid-url' }, { status: 400 });
+    }
+    try {
+      const hit = await resolveFromMegler(meglerUrl);
+      if (hit) return Response.json({ found: true, megler: hostOf(meglerUrl), pdfUrl: hit.pdfUrl, text: hit.text });
+      return Response.json({ found: false, reason: 'no-document', megler: hostOf(meglerUrl), meglerLink: meglerUrl });
+    } catch (err) {
+      console.error('salgsoppgave megler error:', err);
+      return Response.json({ found: false, reason: 'error' }, { status: 200 });
+    }
+  }
+
   if (!finnUrl || !finnUrl.includes('finn.no')) {
     return Response.json({ found: false, reason: 'invalid-url' }, { status: 400 });
   }
 
   try {
-    const { links, estateId, finnPdfs } = await findMeglerLinks(finnUrl);
+    const { links, estateId, finnPdfs, blocked } = await findMeglerLinks(finnUrl);
+    if (blocked) return Response.json({ found: false, reason: 'finn-blocked' }, { status: 200 });
 
     // 1. PDFs attached straight to the Finn ad — no brokerage hop needed.
     const direct = finnPdfs
