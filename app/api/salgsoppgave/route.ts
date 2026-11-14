@@ -20,6 +20,8 @@ function rankPdf(url: string): number {
   if (u.includes('egenerkl')) s -= 6;
   if (u.includes('budskjema') || u.includes('kjopekontrakt') || u.includes('kjøpekontrakt')) s -= 8;
   if (u.includes('nabolag') || u.includes('energiattest') || u.includes('vedtekter')) s -= 4;
+  // Insurance leaflets "til salgsoppgave" (EIE attaches a Gjensidige produktark).
+  if (u.includes('produktark') || u.includes('forsikring') || u.includes('prisliste')) s -= 12;
   return s;
 }
 
@@ -112,7 +114,8 @@ function collectDocs(html: string, estateId?: string): Doc[] {
 // PrivatMegleren gates the salgsoppgave behind a lead-capture form, but their GraphQL backend
 // exposes the merged document via a public proxy URL. estateId is the short number in the megler link.
 async function resolvePrivatMegleren(link: string): Promise<string | undefined> {
-  const estateId = link.match(/privatmegleren\.no\/(?:registrerinteressent\/)?(\d{4,7})\b/)?.[1];
+  // Finn links to /123456 or /registrerinteressent/123456; the site itself uses /eiendom/123456.
+  const estateId = link.match(/privatmegleren\.no\/(?:registrerinteressent\/|eiendom\/)?(\d{4,7})\b/)?.[1];
   if (!estateId) return undefined;
 
   const query = `{ estate(input:{brandId:"privatmegleren",estateId:"${estateId}",preview:false,refresh:false}){ documents{ list{ url description } } } }`;
@@ -305,18 +308,40 @@ async function resolveFromMegler(link: string, estateId?: string): Promise<{ tex
     ? [docs[0].url, ...epaper, ...docs.slice(1).map((d) => d.url)]
     : [...epaper, ...docs.map((d) => d.url)];
 
-  for (const url of candidates.slice(0, 4)) {
-    const text = await pdfText(url);
-    if (text) return { text, pdfUrl: url };
-  }
+  // Read the top candidates in parallel and prefer the one that actually reads
+  // like a tilstandsrapport — the first readable PDF is often an insurance
+  // leaflet, nabolagsprofil or energiattest.
+  const top = [...new Set(candidates)].slice(0, 8);
+  const texts = await Promise.all(top.map((url) => pdfText(url)));
+  const pdfs = top
+    .map((url, i) => ({ url, text: texts[i], score: texts[i] ? reportScore(texts[i]!) : -1 }))
+    .filter((d) => d.text);
+  const strong = pdfs.find((d) => d.score >= REPORT_MIN);
+  if (strong) return { text: strong.text!, pdfUrl: strong.url };
 
-  // No PDF worked, but the page itself may BE the digital salgsoppgave (the
-  // DNB autoprospekt pattern, which several brokers now copy).
+  // The page itself may BE the digital salgsoppgave (the DNB autoprospekt
+  // pattern, which several brokers now copy, e.g. EiendomsMegler 1).
   const text = htmlToText(html);
-  if (text.replace(/\s/g, '').length > 4000 && /tilstandsgrad|vurderte forhold|TG\s?[123]/i.test(text)) {
+  if (text.replace(/\s/g, '').length > 4000 && /tilstandsgrad|vurderte forhold|TG\s?[123]/i.test(text) && reportScore(text) >= REPORT_MIN) {
     return { text: text.slice(0, 200_000), pdfUrl: '' };
   }
-  return undefined;
+
+  // Nothing report-like: fall back to the most report-like PDF we could read.
+  const best = pdfs.sort((a, b) => b.score - a.score)[0];
+  return best ? { text: best.text!, pdfUrl: best.url } : undefined;
+}
+
+// How much a text reads like a tilstandsrapport: number of distinct building
+// parts it mentions. Real reports hit 10+, leaflets and nabolagsprofiler 0–3.
+const REPORT_TERMS = [
+  'våtrom', 'drenering', 'vindu', 'ventilasjon', 'pipe', 'taktekking', 'yttervegg', 'sluk',
+  'membran', 'varmtvannsbereder', 'radon', 'takrenne', 'fukt', 'kjøkken', 'trapp', 'balkong',
+  'vannledning', 'avløp', 'el-anlegg', 'elektrisk anlegg', 'krypkjeller', 'loft',
+];
+const REPORT_MIN = 6;
+function reportScore(text: string): number {
+  const t = text.toLowerCase();
+  return REPORT_TERMS.filter((k) => t.includes(k)).length;
 }
 
 export async function GET(request: Request) {
