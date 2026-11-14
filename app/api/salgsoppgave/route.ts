@@ -288,7 +288,7 @@ async function resolveFromMegler(link: string, estateId?: string): Promise<{ tex
   if (megler.includes('privatmegleren.no')) {
     const url = await resolvePrivatMegleren(link);
     const text = url ? await pdfText(url) : undefined;
-    if (text && url) return { text, pdfUrl: url };
+    if (text && url && reportScore(text) >= REPORT_MIN) return { text, pdfUrl: url };
   }
 
   if (/\.pdf(\?|#|$)/i.test(link)) {
@@ -326,9 +326,9 @@ async function resolveFromMegler(link: string, estateId?: string): Promise<{ tex
     return { text: text.slice(0, 200_000), pdfUrl: '' };
   }
 
-  // Nothing report-like: fall back to the most report-like PDF we could read.
-  const best = pdfs.sort((a, b) => b.score - a.score)[0];
-  return best ? { text: best.text!, pdfUrl: best.url } : undefined;
+  // Nothing report-like (gated salgsoppgave, nybygg without tilstandsrapport):
+  // report not-found so the user uploads the PDF, instead of analysing a leaflet.
+  return undefined;
 }
 
 // How much a text reads like a tilstandsrapport: number of distinct building
@@ -379,7 +379,7 @@ export async function GET(request: Request) {
       .sort((a, b) => b.score - a.score);
     for (const d of direct.slice(0, 3)) {
       const text = await pdfText(d.url);
-      if (text) return Response.json({ found: true, megler: 'finn.no', pdfUrl: d.url, text });
+      if (text && reportScore(text) >= REPORT_MIN) return Response.json({ found: true, megler: 'finn.no', pdfUrl: d.url, text });
     }
 
     if (!links.length) return Response.json({ found: false, reason: 'no-megler-link' }, { status: 200 });
