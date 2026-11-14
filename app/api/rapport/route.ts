@@ -156,7 +156,9 @@ export async function POST(request: Request) {
       // Try a smaller model on: rate-limit (429), too-large (413), and truncated/
       // invalid JSON (400 json_validate_failed) — a smaller input window yields a
       // shorter completion that is less likely to be cut off mid-object.
-      if (res.status === 429 || res.status === 413 || errBody.includes('json_validate_failed')) continue;
+      // Also on 404 model_not_found: Groq retires models (llama-3.3-70b-versatile
+      // is gone), and one dead model must not take the whole analysis down.
+      if (res.status === 429 || res.status === 413 || res.status === 404 || errBody.includes('json_validate_failed')) continue;
       break; // other errors won't be fixed by switching model
     }
 

@@ -20,6 +20,8 @@ function rankPdf(url: string): number {
   if (u.includes('egenerkl')) s -= 6;
   if (u.includes('budskjema') || u.includes('kjopekontrakt') || u.includes('kjøpekontrakt')) s -= 8;
   if (u.includes('nabolag') || u.includes('energiattest') || u.includes('vedtekter')) s -= 4;
+  // Insurance leaflets "til salgsoppgave" (EIE attaches a Gjensidige produktark).
+  if (u.includes('produktark') || u.includes('forsikring') || u.includes('prisliste')) s -= 12;
   return s;
 }
 
@@ -100,19 +102,30 @@ function collectDocs(html: string, estateId?: string): Doc[] {
     if (byId.length) urls = byId;
   }
 
-  return urls
-    .map((url) => {
-      const label = labelMap.get(fileName(url)) ?? '';
-      const score = Math.max(rankLabel(label), rankPdf(url));
-      return { url, label, score };
-    })
-    .sort((a, b) => b.score - a.score);
+  const docs = urls.map((url) => {
+    const label = labelMap.get(fileName(url)) ?? '';
+    const score = Math.max(rankLabel(label), rankPdf(url));
+    return { url, label, score };
+  });
+
+  // Reeltime/Webtop digital salgsoppgaver (Mekleriet, PrivatMegleren-partners)
+  // list documents as JSON {"description":"Tilstandsrapport","url":".../document/<id>"}
+  // with no .pdf in the URL, so the scan above misses them.
+  const unescaped = html.replace(/\\"/g, '"').replace(/\\u002[fF]/gi, '/');
+  const jRe = /"description"\s*:\s*"([^"]+)"[^{}]{0,200}?"url"\s*:\s*"(https:\/\/[^"]+\/document\/[^"]+)"/gi;
+  let m: RegExpExecArray | null;
+  while ((m = jRe.exec(unescaped)) !== null) {
+    if (!docs.some((d) => d.url === m![2])) docs.push({ url: m[2], label: m[1], score: rankLabel(m[1]) });
+  }
+
+  return docs.sort((a, b) => b.score - a.score);
 }
 
 // PrivatMegleren gates the salgsoppgave behind a lead-capture form, but their GraphQL backend
 // exposes the merged document via a public proxy URL. estateId is the short number in the megler link.
 async function resolvePrivatMegleren(link: string): Promise<string | undefined> {
-  const estateId = link.match(/privatmegleren\.no\/(?:registrerinteressent\/)?(\d{4,7})\b/)?.[1];
+  // Finn links to /123456 or /registrerinteressent/123456; the site itself uses /eiendom/123456.
+  const estateId = link.match(/privatmegleren\.no\/(?:registrerinteressent\/|eiendom\/)?(\d{4,7})\b/)?.[1];
   if (!estateId) return undefined;
 
   const query = `{ estate(input:{brandId:"privatmegleren",estateId:"${estateId}",preview:false,refresh:false}){ documents{ list{ url description } } } }`;
@@ -184,7 +197,10 @@ function hostOf(url: string): string {
 async function pdfText(url: string): Promise<string | undefined> {
   const res = await fetchT(url, {}, 20_000);
   if (!res?.ok) return undefined;
-  const buf = new Uint8Array(await res.arrayBuffer());
+  return pdfFromBuffer(new Uint8Array(await res.arrayBuffer()));
+}
+
+async function pdfFromBuffer(buf: Uint8Array): Promise<string | undefined> {
   if (buf[0] !== 0x25 || buf[1] !== 0x50) return undefined; // not "%P(DF)"
   try {
     const pdf = await getDocumentProxy(buf);
@@ -233,9 +249,11 @@ async function resolveDnbText(link: string): Promise<string | undefined> {
 // Finn CTA, then document-shaped URLs, then known brokerages, then any other
 // external site. Returning a ranked LIST rather than one link matters — when the
 // first candidate is a dead end we simply try the next instead of giving up.
-async function findMeglerLinks(finnUrl: string): Promise<{ links: string[]; estateId?: string; finnPdfs: string[] }> {
+async function findMeglerLinks(finnUrl: string): Promise<{ links: string[]; estateId?: string; finnPdfs: string[]; blocked?: boolean }> {
   const res = await fetchT(finnUrl, { next: { revalidate: 0 } } as RequestInit);
-  if (!res?.ok) return { links: [], finnPdfs: [] };
+  // Finn answers 403 to most datacenter IPs (bot protection) — report it so the
+  // client can ask for the megler link instead of saying "no document".
+  if (!res?.ok) return { links: [], finnPdfs: [], blocked: !res || res.status === 403 || res.status === 429 };
   const html = await res.text();
 
   const links: string[] = [];
@@ -283,49 +301,118 @@ async function resolveFromMegler(link: string, estateId?: string): Promise<{ tex
   if (megler.includes('privatmegleren.no')) {
     const url = await resolvePrivatMegleren(link);
     const text = url ? await pdfText(url) : undefined;
-    if (text && url) return { text, pdfUrl: url };
+    if (text && url && reportScore(text) >= REPORT_MIN) return { text, pdfUrl: url };
   }
 
-  if (/\.pdf(\?|#|$)/i.test(link)) {
-    const text = await pdfText(link);
-    if (text) return { text, pdfUrl: link };
-  }
-
-  const r = await fetchT(link, { next: { revalidate: 0 } } as RequestInit);
+  const r = await fetchT(link, { next: { revalidate: 0 } } as RequestInit, 20_000);
   if (!r?.ok) return undefined;
-  const html = await r.text();
+  const buf = new Uint8Array(await r.arrayBuffer());
+
+  // The link may itself be the document, even without a .pdf extension
+  // (Webmegler "wngetfile.ashx?…" links straight from Finn).
+  const direct = await pdfFromBuffer(buf);
+  if (direct) return { text: direct, pdfUrl: link };
+  const html = new TextDecoder().decode(buf);
 
   const docs = collectDocs(html, estateId).filter((d) => d.score >= 0);
   const epaper = extractEpaperUrl(html) ? [extractEpaperUrl(html)!] : [];
-  // A confidently-labelled PDF wins; otherwise try the epaper before the
-  // weak/hashed filenames that only scored 0.
+  const labelled = labelledDocLinks(html, link);
+  // A confidently-labelled PDF wins; otherwise try the epaper and links whose
+  // text says "Salgsoppgave" before the weak/hashed filenames that only scored 0.
   const candidates = docs[0]?.score > 0
-    ? [docs[0].url, ...epaper, ...docs.slice(1).map((d) => d.url)]
-    : [...epaper, ...docs.map((d) => d.url)];
+    ? [docs[0].url, ...epaper, ...labelled, ...docs.slice(1).map((d) => d.url)]
+    : [...epaper, ...labelled, ...docs.map((d) => d.url)];
 
-  for (const url of candidates.slice(0, 4)) {
-    const text = await pdfText(url);
-    if (text) return { text, pdfUrl: url };
+  // Read the top candidates in parallel and prefer the one that actually reads
+  // like a tilstandsrapport — the first readable PDF is often an insurance
+  // leaflet, nabolagsprofil or energiattest.
+  const unique = [...new Set(candidates)];
+
+  // Confidently-labelled top document (e.g. Aktiv "Salgsoppgave.PDF"): read it
+  // alone first — big salgsoppgaver downloaded 8-at-a-time can blow the 60s budget.
+  if (docs[0]?.score >= 8 && unique[0] === docs[0].url) {
+    const first = await pdfText(docs[0].url);
+    if (first && reportScore(first) >= REPORT_MIN) return { text: first, pdfUrl: docs[0].url };
   }
 
-  // No PDF worked, but the page itself may BE the digital salgsoppgave (the
-  // DNB autoprospekt pattern, which several brokers now copy).
+  const top = unique.slice(0, 8);
+  const texts = await Promise.all(top.map((url) => pdfText(url)));
+  const pdfs = top
+    .map((url, i) => ({ url, text: texts[i], score: texts[i] ? reportScore(texts[i]!) : -1 }))
+    .filter((d) => d.text);
+  const strong = pdfs.find((d) => d.score >= REPORT_MIN);
+  if (strong) return { text: strong.text!, pdfUrl: strong.url };
+
+  // The page itself may BE the digital salgsoppgave (the DNB autoprospekt
+  // pattern, which several brokers now copy, e.g. EiendomsMegler 1).
   const text = htmlToText(html);
-  if (text.replace(/\s/g, '').length > 4000 && /tilstandsgrad|vurderte forhold|TG\s?[123]/i.test(text)) {
+  if (text.replace(/\s/g, '').length > 4000 && /tilstandsgrad|vurderte forhold|TG\s?[123]/i.test(text) && reportScore(text) >= REPORT_MIN) {
     return { text: text.slice(0, 200_000), pdfUrl: '' };
   }
+
+  // Nothing report-like (gated salgsoppgave, nybygg without tilstandsrapport):
+  // report not-found so the user uploads the PDF, instead of analysing a leaflet.
   return undefined;
+}
+
+// Links whose visible text names the document ("Last ned salgsoppgave",
+// "Salgsoppgave") but whose URL has no .pdf extension — e.g. ASK/Webtop epaper
+// links. Order-form links ("Bestill …") are skipped: they lead to lead forms.
+function labelledDocLinks(html: string, base: string): string[] {
+  const out: string[] = [];
+  const re = /<a[^>]+href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/gi;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(html)) !== null) {
+    const label = m[2].replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().toLowerCase();
+    if (!/salgsoppgave|tilstandsrapport|prospekt/.test(label) || /bestill|meld interesse/.test(label)) continue;
+    try {
+      const url = new URL(m[1].replace(/&amp;/g, '&'), base).toString();
+      if (/^https:/.test(url) && !/\.pdf(\?|#|$)/i.test(url) && !out.includes(url)) out.push(url);
+    } catch { /* ignore malformed href */ }
+  }
+  return out.slice(0, 3);
+}
+
+// How much a text reads like a tilstandsrapport: number of distinct building
+// parts it mentions. Real reports hit 10+, leaflets and nabolagsprofiler 0–3.
+const REPORT_TERMS = [
+  'våtrom', 'drenering', 'vindu', 'ventilasjon', 'pipe', 'taktekking', 'yttervegg', 'sluk',
+  'membran', 'varmtvannsbereder', 'radon', 'takrenne', 'fukt', 'kjøkken', 'trapp', 'balkong',
+  'vannledning', 'avløp', 'el-anlegg', 'elektrisk anlegg', 'krypkjeller', 'loft',
+];
+const REPORT_MIN = 6;
+function reportScore(text: string): number {
+  const t = text.toLowerCase();
+  return REPORT_TERMS.filter((k) => t.includes(k)).length;
 }
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const finnUrl = searchParams.get('url');
+  const meglerUrl = searchParams.get('megler');
+
+  // Direct megler link (the user pasted the broker's listing page) — skips Finn entirely.
+  if (meglerUrl) {
+    if (!/^https:\/\//i.test(meglerUrl) || hostOf(meglerUrl).includes('finn.no')) {
+      return Response.json({ found: false, reason: 'invalid-url' }, { status: 400 });
+    }
+    try {
+      const hit = await resolveFromMegler(meglerUrl);
+      if (hit) return Response.json({ found: true, megler: hostOf(meglerUrl), pdfUrl: hit.pdfUrl, text: hit.text });
+      return Response.json({ found: false, reason: 'no-document', megler: hostOf(meglerUrl), meglerLink: meglerUrl });
+    } catch (err) {
+      console.error('salgsoppgave megler error:', err);
+      return Response.json({ found: false, reason: 'error' }, { status: 200 });
+    }
+  }
+
   if (!finnUrl || !finnUrl.includes('finn.no')) {
     return Response.json({ found: false, reason: 'invalid-url' }, { status: 400 });
   }
 
   try {
-    const { links, estateId, finnPdfs } = await findMeglerLinks(finnUrl);
+    const { links, estateId, finnPdfs, blocked } = await findMeglerLinks(finnUrl);
+    if (blocked) return Response.json({ found: false, reason: 'finn-blocked' }, { status: 200 });
 
     // 1. PDFs attached straight to the Finn ad — no brokerage hop needed.
     const direct = finnPdfs
@@ -334,7 +421,7 @@ export async function GET(request: Request) {
       .sort((a, b) => b.score - a.score);
     for (const d of direct.slice(0, 3)) {
       const text = await pdfText(d.url);
-      if (text) return Response.json({ found: true, megler: 'finn.no', pdfUrl: d.url, text });
+      if (text && reportScore(text) >= REPORT_MIN) return Response.json({ found: true, megler: 'finn.no', pdfUrl: d.url, text });
     }
 
     if (!links.length) return Response.json({ found: false, reason: 'no-megler-link' }, { status: 200 });
