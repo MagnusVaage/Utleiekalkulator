@@ -187,7 +187,10 @@ function hostOf(url: string): string {
 async function pdfText(url: string): Promise<string | undefined> {
   const res = await fetchT(url, {}, 20_000);
   if (!res?.ok) return undefined;
-  const buf = new Uint8Array(await res.arrayBuffer());
+  return pdfFromBuffer(new Uint8Array(await res.arrayBuffer()));
+}
+
+async function pdfFromBuffer(buf: Uint8Array): Promise<string | undefined> {
   if (buf[0] !== 0x25 || buf[1] !== 0x50) return undefined; // not "%P(DF)"
   try {
     const pdf = await getDocumentProxy(buf);
@@ -291,22 +294,24 @@ async function resolveFromMegler(link: string, estateId?: string): Promise<{ tex
     if (text && url && reportScore(text) >= REPORT_MIN) return { text, pdfUrl: url };
   }
 
-  if (/\.pdf(\?|#|$)/i.test(link)) {
-    const text = await pdfText(link);
-    if (text) return { text, pdfUrl: link };
-  }
-
-  const r = await fetchT(link, { next: { revalidate: 0 } } as RequestInit);
+  const r = await fetchT(link, { next: { revalidate: 0 } } as RequestInit, 20_000);
   if (!r?.ok) return undefined;
-  const html = await r.text();
+  const buf = new Uint8Array(await r.arrayBuffer());
+
+  // The link may itself be the document, even without a .pdf extension
+  // (Webmegler "wngetfile.ashx?…" links straight from Finn).
+  const direct = await pdfFromBuffer(buf);
+  if (direct) return { text: direct, pdfUrl: link };
+  const html = new TextDecoder().decode(buf);
 
   const docs = collectDocs(html, estateId).filter((d) => d.score >= 0);
   const epaper = extractEpaperUrl(html) ? [extractEpaperUrl(html)!] : [];
-  // A confidently-labelled PDF wins; otherwise try the epaper before the
-  // weak/hashed filenames that only scored 0.
+  const labelled = labelledDocLinks(html, link);
+  // A confidently-labelled PDF wins; otherwise try the epaper and links whose
+  // text says "Salgsoppgave" before the weak/hashed filenames that only scored 0.
   const candidates = docs[0]?.score > 0
-    ? [docs[0].url, ...epaper, ...docs.slice(1).map((d) => d.url)]
-    : [...epaper, ...docs.map((d) => d.url)];
+    ? [docs[0].url, ...epaper, ...labelled, ...docs.slice(1).map((d) => d.url)]
+    : [...epaper, ...labelled, ...docs.map((d) => d.url)];
 
   // Read the top candidates in parallel and prefer the one that actually reads
   // like a tilstandsrapport — the first readable PDF is often an insurance
@@ -338,6 +343,24 @@ async function resolveFromMegler(link: string, estateId?: string): Promise<{ tex
   // Nothing report-like (gated salgsoppgave, nybygg without tilstandsrapport):
   // report not-found so the user uploads the PDF, instead of analysing a leaflet.
   return undefined;
+}
+
+// Links whose visible text names the document ("Last ned salgsoppgave",
+// "Salgsoppgave") but whose URL has no .pdf extension — e.g. ASK/Webtop epaper
+// links. Order-form links ("Bestill …") are skipped: they lead to lead forms.
+function labelledDocLinks(html: string, base: string): string[] {
+  const out: string[] = [];
+  const re = /<a[^>]+href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/gi;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(html)) !== null) {
+    const label = m[2].replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().toLowerCase();
+    if (!/salgsoppgave|tilstandsrapport|prospekt/.test(label) || /bestill|meld interesse/.test(label)) continue;
+    try {
+      const url = new URL(m[1].replace(/&amp;/g, '&'), base).toString();
+      if (/^https:/.test(url) && !/\.pdf(\?|#|$)/i.test(url) && !out.includes(url)) out.push(url);
+    } catch { /* ignore malformed href */ }
+  }
+  return out.slice(0, 3);
 }
 
 // How much a text reads like a tilstandsrapport: number of distinct building
